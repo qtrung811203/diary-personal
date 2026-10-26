@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Together Diary — Lịch</title>
+<style>
+  :root {
+    --ink: #3a332c;
+    --ink-soft: #7a6f62;
+    --accent: #c76f4b;
+    --accent-soft: #f0d9c9;
+    --card: #ffffffcc;
+    --border: #e7ddd0;
+    --bg-day: radial-gradient(circle at 15% 10%, #fff7ec 0%, #fbe9d6 45%, #f3d9bd 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  body { background: var(--bg-day); min-height: 100vh; }
+
+  /* dimmed background preview of the diary page behind the modal */
+  .backdrop-page { filter: blur(2px) saturate(0.9); opacity: 0.6; padding: 24px 28px; }
+  .fake-topbar { display:flex; justify-content: space-between; margin-bottom: 14px; }
+  .fake-date { font-weight: 700; font-size: 20px; }
+  .fake-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; height: 420px; }
+
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(58, 51, 44, 0.35);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal {
+    width: 360px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 30px 60px -25px rgba(0,0,0,0.4);
+    padding: 20px 20px 16px;
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .modal-head .nav-btn {
+    width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border);
+    background: #faf6ef; cursor: pointer; font-size: 13px;
+  }
+  .modal-head .month-label { font-weight: 700; font-size: 15px; }
+  .close-btn {
+    position: absolute; top: 14px; right: 16px;
+    border: none; background: transparent; font-size: 16px; cursor: pointer; color: var(--ink-soft);
+  }
+
+  .grid-labels, .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .grid-labels div {
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    font-weight: 700;
+    padding-bottom: 6px;
+  }
+  .grid .cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    position: relative;
+    color: var(--ink);
+  }
+  .cell.muted { color: #c9beb0; }
+  .cell:hover { background: var(--accent-soft); }
+  .cell.today { background: var(--accent); color: #fff; font-weight: 700; }
+  .cell .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent);
+    margin-top: 3px;
+  }
+  .cell.today .dot { background: #fff; }
+
+  .legend {
+    display: flex; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+    font-size: 11.5px; color: var(--ink-soft);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .dot-sample { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .legend .ring-sample { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+  @media (max-width: 480px) {
+    .modal { width: 92vw; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="backdrop-page">
+    <div class="fake-topbar">
+      <div class="fake-date">Thứ Hai, 26 Tháng 10, 2026</div>
+      <div>🎨 📅</div>
+    </div>
+    <div class="fake-card"></div>
+  </div>
+
+  <div class="scrim">
+    <div class="modal">
+      <button class="close-btn">✕</button>
+      <div class="modal-head">
+        <button class="nav-btn">‹</button>
+        <div class="month-label">Tháng 10, 2026</div>
+        <button class="nav-btn">›</button>
+      </div>
+
+      <div class="grid-labels">
+        <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+      </div>
+
+      <div class="grid">
+        <!-- week 1 -->
+        <div class="cell muted">28</div><div class="cell muted">29</div><div class="cell muted">30</div>
+        <div class="cell">1<span class="dot"></span></div>
+        <div class="cell">2</div>
+        <div class="cell">3<span class="dot"></span></div>
+        <div class="cell">4</div>
+        <!-- week 2 -->
+        <div class="cell">5<span class="dot"></span></div>
+        <div class="cell">6<span class="dot"></span></div>
+        <div class="cell">7</div>
+        <div class="cell">8<span class="dot"></span></div>
+        <div class="cell">9<span class="dot"></span></div>
+        <div class="cell">10</div>
+        <div class="cell">11<span class="dot"></span></div>
+        <!-- week 3 -->
+        <div class="cell">12<span class="dot"></span></div>
+        <div class="cell">13</div>
+        <div class="cell">14<span class="dot"></span></div>
+        <div class="cell">15<span class="dot"></span></div>
+        <div class="cell">16</div>
+        <div class="cell">17<span class="dot"></span></div>
+        <div class="cell">18<span class="dot"></span></div>
+        <!-- week 4 -->
+        <div class="cell">19</div>
+        <div class="cell">20<span class="dot"></span></div>
+        <div class="cell">21<span class="dot"></span></div>
+        <div class="cell">22</div>
+        <div class="cell">23<span class="dot"></span></div>
+        <div class="cell">24<span class="dot"></span></div>
+        <div class="cell">25</div>
+        <!-- week 5 -->
+        <div class="cell today">26<span class="dot"></span></div>
+        <div class="cell muted">27</div>
+        <div class="cell muted">28</div>
+        <div class="cell muted">29</div>
+        <div class="cell muted">30</div>
+        <div class="cell muted">31</div>
+        <div class="cell muted">1</div>
+      </div>
+
+      <div class="legend">
+        <span><i class="dot-sample"></i> Ngày đã viết</span>
+        <span>Ô trống = chưa viết</span>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

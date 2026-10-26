@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Together Diary — Hôm nay</title>
+<style>
+  :root {
+    --ink: #3a332c;
+    --ink-soft: #7a6f62;
+    --accent: #c76f4b;
+    --accent-soft: #f0d9c9;
+    --card: #ffffffcc;
+    --border: #e7ddd0;
+    --bg-day: radial-gradient(circle at 15% 10%, #fff7ec 0%, #fbe9d6 45%, #f3d9bd 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  body {
+    background: var(--bg-day);
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* top bar */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+  }
+  .date-block .label { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
+  .date-block .date { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .top-actions { display: flex; gap: 10px; }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    cursor: pointer;
+  }
+  .icon-btn:hover { background: #fff; }
+
+  /* toolbar */
+  .toolbar {
+    margin: 0 28px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    backdrop-filter: blur(6px);
+  }
+  .toolbar button {
+    border: none;
+    background: transparent;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .toolbar button:hover { background: var(--accent-soft); }
+  .toolbar button.bold { font-weight: 800; }
+  .toolbar button.italic { font-style: italic; }
+  .toolbar button.underline { text-decoration: underline; }
+  .divider { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
+
+  /* editor */
+  .editor-wrap {
+    flex: 1;
+    margin: 0 28px 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 44px;
+    overflow-y: auto;
+    backdrop-filter: blur(6px);
+  }
+  .editor {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.8;
+    max-width: 640px;
+    margin: 0 auto;
+    outline: none;
+  }
+  .editor h2 { font-family: inherit; font-size: 15px; letter-spacing: 1px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 18px; }
+  .editor p { margin: 0 0 14px; }
+  .editor p.center { text-align: center; }
+  .editor .caps { text-transform: uppercase; letter-spacing: 0.5px; }
+  .editor img.pasted {
+    display: block;
+    margin: 18px auto;
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px -10px rgba(0,0,0,0.3);
+  }
+
+  /* bg picker popover */
+  .bg-pop {
+    position: absolute;
+    top: 70px;
+    right: 28px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 20px 40px -20px rgba(0,0,0,0.3);
+    display: none;
+    width: 230px;
+  }
+  .bg-pop.open { display: block; }
+  .bg-pop .title { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 10px; }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); }
+  .upload-bg {
+    width: 100%;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: #faf6ef;
+    padding: 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    text-align: center;
+  }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 14px 16px; }
+    .date-block .date { font-size: 18px; }
+    .toolbar { margin: 0 16px 10px; overflow-x: auto; }
+    .editor-wrap { margin: 0 16px 16px; padding: 22px 20px; }
+    .bg-pop { right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="date-block">
+      <div class="label">Hôm nay</div>
+      <div class="date">Thứ Hai, 26 Tháng 10, 2026</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="Chọn nền" onclick="document.getElementById('bgPop').classList.toggle('open')">🎨</button>
+      <button class="icon-btn" title="Mở lịch" onclick="window.location.href='calendar.html'">📅</button>
+    </div>
+  </div>
+
+  <div id="bgPop" class="bg-pop">
+    <div class="title">NỀN CHO NGÀY HÔM NAY</div>
+    <div class="swatches">
+      <div class="swatch" style="background:#fbe9d6"></div>
+      <div class="swatch" style="background:#d9ecdd"></div>
+      <div class="swatch" style="background:#d9e4f0"></div>
+      <div class="swatch" style="background:#f0d9e8"></div>
+      <div class="swatch" style="background:#3a332c"></div>
+      <div class="swatch" style="background:#fffaf0"></div>
+    </div>
+    <div class="upload-bg">🖼️ Tải ảnh nền lên</div>
+  </div>
+
+  <div class="toolbar">
+    <button class="bold" title="Đậm (Ctrl+B)">B</button>
+    <button class="italic" title="Nghiêng (Ctrl+I)">I</button>
+    <button class="underline" title="Gạch chân (Ctrl+U)">U</button>
+    <div class="divider"></div>
+    <button title="Viết HOA">AA</button>
+    <button title="Viết thường">aa</button>
+    <div class="divider"></div>
+    <button title="Căn trái">⇤</button>
+    <button title="Căn giữa">≡</button>
+    <button title="Căn phải">⇥</button>
+  </div>
+
+  <div class="editor-wrap">
+    <div class="editor" contenteditable="true">
+      <h2>Ghi chú trong ngày</h2>
+      <p class="center caps">Một ngày khá ổn</p>
+      <p>Sáng nay dậy sớm hơn mọi khi, trời hơi lạnh nhưng nắng rất đẹp. Mình đã <b>hoàn thành</b> được việc viết layout mockup cho app nhật ký — cảm giác <i>rất hài lòng</i> vì cuối cùng cũng có chỗ để lưu lại những ngày như thế này.</p>
+      <img class="pasted" src="https://images.unsplash.com/photo-1517842645767-c639042777db?w=640&q=60" alt="ảnh paste minh hoạ" />
+      <p>Chiều có hẹn cà phê với bạn, nói chuyện khá lâu về <u>kế hoạch sắp tới</u>. Tối về ăn cơm cùng gia đình, mọi thứ bình yên.</p>
+    </div>
+  </div>
+
+</body>
+</html>

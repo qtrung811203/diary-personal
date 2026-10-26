@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Together Diary — Đăng nhập</title>
+<style>
+  :root {
+    --paper: #faf6ef;
+    --ink: #3a332c;
+    --ink-soft: #7a6f62;
+    --accent: #c76f4b;
+    --accent-soft: #f0d9c9;
+    --card: #ffffff;
+    --border: #e7ddd0;
+    --shadow: 0 20px 50px -20px rgba(58, 51, 44, 0.25);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at 20% 20%, #fff 0%, var(--paper) 55%, #f1e6d8 100%);
+    color: var(--ink);
+  }
+  .card {
+    width: 380px;
+    background: var(--card);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 36px 32px 28px;
+  }
+  .brand {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .brand .mark {
+    font-size: 30px;
+    display: inline-block;
+    margin-bottom: 6px;
+  }
+  .brand h1 {
+    font-size: 19px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .brand p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .tabs {
+    display: flex;
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .tabs button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .tabs button.active {
+    background: var(--card);
+    color: var(--accent);
+    box-shadow: 0 4px 10px -4px rgba(0,0,0,0.15);
+  }
+  form { display: flex; flex-direction: column; gap: 14px; }
+  label { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; margin-bottom: -8px; }
+  input {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+  }
+  input:focus { border-color: var(--accent); }
+  .submit {
+    margin-top: 6px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 0;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .submit:hover { background: #b45f3d; }
+  .hint {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 16px;
+  }
+  .register-only { display: none; }
+  body.mode-register .login-only { display: none; }
+  body.mode-register .register-only { display: flex; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="mark">📔</div>
+      <h1>Together Diary</h1>
+      <p>Ghi lại từng ngày của bạn</p>
+    </div>
+
+    <div class="tabs">
+      <button class="active" onclick="document.body.classList.remove('mode-register'); this.classList.add('active'); this.nextElementSibling.classList.remove('active');">Đăng nhập</button>
+      <button onclick="document.body.classList.add('mode-register'); this.classList.add('active'); this.previousElementSibling.classList.remove('active');">Đăng ký</button>
+    </div>
+
+    <form>
+      <div class="register-only" style="display:flex; flex-direction:column; gap:6px;">
+        <label>Tên hiển thị</label>
+        <input type="text" placeholder="Ví dụ: Trung" />
+      </div>
+
+      <label>Email</label>
+      <input type="email" placeholder="ban@email.com" />
+
+      <label>Mật khẩu</label>
+      <input type="password" placeholder="••••••••" />
+
+      <div class="register-only" style="display:flex; flex-direction:column; gap:6px;">
+        <label>Nhập lại mật khẩu</label>
+        <input type="password" placeholder="••••••••" />
+      </div>
+
+      <button type="button" class="submit login-only">Đăng nhập</button>
+      <button type="button" class="submit register-only" style="display:none;">Tạo tài khoản</button>
+    </form>
+
+    <p class="hint login-only">Chưa có tài khoản? Bấm "Đăng ký" ở trên.</p>
+    <p class="hint register-only" style="display:none;">Đã có tài khoản? Bấm "Đăng nhập" ở trên.</p>
+  </div>
+
+  <script>
+    const body = document.body;
+    const observer = () => {
+      const isRegister = body.classList.contains('mode-register');
+      document.querySelectorAll('.login-only').forEach(el => el.style.display = isRegister ? 'none' : (el.tagName === 'BUTTON' ? 'block' : 'block'));
+      document.querySelectorAll('.register-only').forEach(el => el.style.display = isRegister ? (el.tagName === 'BUTTON' ? 'block' : 'flex') : 'none');
+    };
+    document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', observer));
+  </script>
+</body>
+</html>

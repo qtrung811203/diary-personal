@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Together Diary — Xem ngày cũ</title>
+<style>
+  :root {
+    --ink: #3a332c;
+    --ink-soft: #7a6f62;
+    --accent: #c76f4b;
+    --accent-soft: #f0d9c9;
+    --card: #ffffffcc;
+    --border: #e7ddd0;
+    --bg-day: radial-gradient(circle at 80% 10%, #eef3fb 0%, #dce6f5 45%, #cfdcf2 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  body {
+    background: var(--bg-day);
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+  }
+  .date-nav { display: flex; align-items: center; gap: 12px; }
+  .date-nav .nav-btn {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .date-block .label { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; }
+  .date-block .date { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .back-today {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    background: var(--accent-soft);
+    border: none;
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    margin-left: 6px;
+  }
+  .top-actions { display: flex; gap: 10px; }
+  .icon-btn {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    cursor: pointer;
+  }
+
+  .editing-banner {
+    margin: 0 28px 14px;
+    background: #fff4e5;
+    border: 1px solid #f0d9c0;
+    color: #8a5a22;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 10px;
+  }
+
+  .toolbar {
+    margin: 0 28px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .toolbar button {
+    border: none;
+    background: transparent;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .toolbar button:hover { background: var(--accent-soft); }
+  .toolbar button.bold { font-weight: 800; }
+  .toolbar button.italic { font-style: italic; }
+  .toolbar button.underline { text-decoration: underline; }
+  .divider { width: 1px; height: 22px; background: var(--border); margin: 0 6px; }
+
+  .editor-wrap {
+    flex: 1;
+    margin: 0 28px 28px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 44px;
+    overflow-y: auto;
+  }
+  .editor {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.8;
+    max-width: 640px;
+    margin: 0 auto;
+    outline: none;
+  }
+  .editor h2 { font-family: inherit; font-size: 15px; letter-spacing: 1px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 18px; }
+  .editor p { margin: 0 0 14px; }
+
+  @media (max-width: 640px) {
+    .topbar { padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+    .date-block .date { font-size: 17px; }
+    .editing-banner { margin: 0 16px 10px; }
+    .toolbar { margin: 0 16px 10px; overflow-x: auto; }
+    .editor-wrap { margin: 0 16px 16px; padding: 22px 20px; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="date-nav">
+      <button class="nav-btn" title="Ngày trước">‹</button>
+      <div class="date-block">
+        <div class="label">Xem lại</div>
+        <div class="date">Thứ Ba, 20 Tháng 10, 2026</div>
+      </div>
+      <button class="nav-btn" title="Ngày sau">›</button>
+      <button class="back-today">Về hôm nay</button>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" title="Chọn nền">🎨</button>
+      <button class="icon-btn" title="Mở lịch" onclick="window.location.href='calendar.html'">📅</button>
+    </div>
+  </div>
+
+  <div class="editing-banner">✏️ Bạn đang sửa lại nhật ký của một ngày trước — thay đổi sẽ được lưu lại bình thường.</div>
+
+  <div class="toolbar">
+    <button class="bold" title="Đậm">B</button>
+    <button class="italic" title="Nghiêng">I</button>
+    <button class="underline" title="Gạch chân">U</button>
+    <div class="divider"></div>
+    <button title="Viết HOA">AA</button>
+    <button title="Viết thường">aa</button>
+    <div class="divider"></div>
+    <button title="Căn trái">⇤</button>
+    <button title="Căn giữa">≡</button>
+    <button title="Căn phải">⇥</button>
+  </div>
+
+  <div class="editor-wrap">
+    <div class="editor" contenteditable="true">
+      <h2>Ghi chú trong ngày</h2>
+      <p>Hôm nay trời mưa suốt buổi sáng, phải dời lại lịch đi chạy bộ. Thay vào đó mình ở nhà đọc xong một cuốn sách đã bỏ dở từ lâu — cảm giác nhẹ nhõm hẳn.</p>
+      <p>Buổi tối gọi điện cho mẹ, nói chuyện gần một giờ. Mẹ kể chuyện ở quê, mình thấy nhớ nhà nhiều hơn mọi khi.</p>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Together Diary — Hôm nay (Mobile)</title>
+<style>
+  :root {
+    --ink: #3a332c;
+    --ink-soft: #7a6f62;
+    --accent: #c76f4b;
+    --accent-soft: #f0d9c9;
+    --card: #ffffffcc;
+    --border: #e7ddd0;
+    --bg-day: radial-gradient(circle at 15% 10%, #fff7ec 0%, #fbe9d6 45%, #f3d9bd 100%);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); background: #ede4d8; }
+
+  /* phone frame so the mobile layout is obvious even when opened on desktop */
+  .phone-frame {
+    width: 390px;
+    max-width: 100vw;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--bg-day);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 0 1px var(--border);
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+  }
+  .date-block .label { font-size: 11px; color: var(--ink-soft); font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; }
+  .date-block .date { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .top-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+
+  /* collapsed toolbar: a single row, pin basic buttons + a "more" that expands */
+  .toolbar {
+    margin: 0 16px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .toolbar button {
+    border: none;
+    background: transparent;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .toolbar button.bold { font-weight: 800; }
+  .toolbar button.italic { font-style: italic; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .more-btn {
+    font-size: 16px;
+    color: var(--ink-soft);
+  }
+
+  .editor-wrap {
+    flex: 1;
+    margin: 0 16px 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    padding: 20px 18px;
+    overflow-y: auto;
+  }
+  .editor {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 15.5px;
+    line-height: 1.75;
+  }
+  .editor h2 { font-size: 13px; letter-spacing: 1px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 14px; }
+  .editor p { margin: 0 0 12px; }
+  .editor .center { text-align: center; }
+
+  /* bottom tab bar */
+  .tabbar {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0 18px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+  }
+  .tabbar .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    font-size: 10.5px; color: var(--ink-soft);
+  }
+  .tabbar .tab.active { color: var(--accent); font-weight: 700; }
+  .tabbar .tab .ic { font-size: 18px; }
+
+  /* calendar bottom sheet */
+  .sheet-scrim {
+    position: fixed; inset: 0;
+    background: rgba(58,51,44,0.4);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 390px;
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    padding: 14px 18px 24px;
+    box-shadow: 0 -20px 40px -20px rgba(0,0,0,0.3);
+  }
+  .sheet .handle { width: 36px; height: 4px; background: var(--border); border-radius: 4px; margin: 0 auto 14px; }
+  .sheet .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sheet .month-label { font-weight: 700; font-size: 14px; }
+  .sheet .nav-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--border); background: #faf6ef; font-size: 12px; }
+  .grid-labels, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .grid-labels div { text-align: center; font-size: 10px; color: var(--ink-soft); font-weight: 700; padding-bottom: 4px; }
+  .grid .cell {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 9px; font-size: 12px;
+  }
+  .cell.muted { color: #c9beb0; }
+  .cell.today { background: var(--accent); color: #fff; font-weight: 700; }
+  .cell .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin-top: 2px; }
+  .cell.today .dot { background: #fff; }
+</style>
+</head>
+<body>
+
+  <div class="phone-frame">
+    <div class="topbar">
+      <div class="date-block">
+        <div class="label">Hôm nay</div>
+        <div class="date">T2, 26 Th10 2026</div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn">🎨</button>
+        <button class="icon-btn" onclick="document.getElementById('sheet').style.display='flex'">📅</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="bold">B</button>
+      <button class="italic">I</button>
+      <button>AA</button>
+      <div class="spacer"></div>
+      <button class="more-btn" title="Thêm định dạng">⋯</button>
+    </div>
+
+    <div class="editor-wrap">
+      <div class="editor" contenteditable="true">
+        <h2>Ghi chú trong ngày</h2>
+        <p class="center">Một ngày khá ổn</p>
+        <p>Sáng nay dậy sớm hơn mọi khi, trời hơi lạnh nhưng nắng rất đẹp. Mình đã <b>hoàn thành</b> layout mockup cho app nhật ký trên điện thoại.</p>
+        <p>Toolbar được rút gọn lại, chỉ còn vài nút chính, bấm "⋯" để mở thêm các tuỳ chọn định dạng khác.</p>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab active"><span class="ic">📝</span>Hôm nay</div>
+      <div class="tab" onclick="document.getElementById('sheet').style.display='flex'"><span class="ic">📅</span>Lịch</div>
+      <div class="tab"><span class="ic">⚙️</span>Cài đặt</div>
+    </div>
+  </div>
+
+  <div class="sheet-scrim" id="sheet" style="display:none;">
+    <div class="sheet">
+      <div class="handle"></div>
+      <div class="modal-head">
+        <button class="nav-btn">‹</button>
+        <div class="month-label">Tháng 10, 2026</div>
+        <button class="nav-btn">›</button>
+      </div>
+      <div class="grid-labels"><div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div></div>
+      <div class="grid">
+        <div class="cell muted">28</div><div class="cell muted">29</div><div class="cell muted">30</div>
+        <div class="cell">1<span class="dot"></span></div><div class="cell">2</div><div class="cell">3<span class="dot"></span></div><div class="cell">4</div>
+        <div class="cell">5<span class="dot"></span></div><div class="cell">6<span class="dot"></span></div><div class="cell">7</div><div class="cell">8<span class="dot"></span></div><div class="cell">9<span class="dot"></span></div><div class="cell">10</div><div class="cell">11<span class="dot"></span></div>
+        <div class="cell">12<span class="dot"></span></div><div class="cell">13</div><div class="cell">14<span class="dot"></span></div><div class="cell">15<span class="dot"></span></div><div class="cell">16</div><div class="cell">17<span class="dot"></span></div><div class="cell">18<span class="dot"></span></div>
+        <div class="cell">19</div><div class="cell">20<span class="dot"></span></div><div class="cell">21<span class="dot"></span></div><div class="cell">22</div><div class="cell">23<span class="dot"></span></div><div class="cell">24<span class="dot"></span></div><div class="cell">25</div>
+        <div class="cell today">26<span class="dot"></span></div><div class="cell muted">27</div><div class="cell muted">28</div><div class="cell muted">29</div><div class="cell muted">30</div><div class="cell muted">31</div><div class="cell muted">1</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.querySelector('.sheet-scrim').addEventListener('click', (e) => {
+      if (e.target.classList.contains('sheet-scrim')) e.target.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
