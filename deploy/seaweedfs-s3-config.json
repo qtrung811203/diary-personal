@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "together-diary",
+      "credentials": [
+        {
+          "accessKey": "minioadmin",
+          "secretKey": "minioadmin"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write"]
+    }
+  ]
+}

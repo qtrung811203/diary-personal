@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: together_diary
+      POSTGRES_PASSWORD: together_diary
+      POSTGRES_DB: together_diary
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+
+  # S3-compatible storage for pasted/background images. MinIO's own Docker
+  # images now require a paid-account login to pull (minio/minio and
+  # quay.io/minio/minio both returned "pull access denied" / 401 as of
+  # 2026-10-26; dl.min.io binaries return 410 Gone), so this uses
+  # SeaweedFS's S3 gateway instead — same @aws-sdk/client-s3 wire protocol,
+  # freely pullable, single-binary. See docs/superpowers/sdd ledger, Task 1.
+  object-storage:
+    image: chrislusf/seaweedfs
+    restart: unless-stopped
+    command: server -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=object-storage
+    volumes:
+      - object-storage-dev-data:/data
+      - ./deploy/seaweedfs-s3-config.json:/etc/seaweedfs/s3_config.json:ro
+    ports:
+      - "9000:9000"
+
+volumes:
+  postgres-dev-data:
+  object-storage-dev-data:
