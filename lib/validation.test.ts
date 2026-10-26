@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isValidDateParam } from "./validation";
+import { isValidDateParam, isValidMonthParam } from "./validation";
 
 describe("isValidDateParam", () => {
   it("accepts a real calendar date", () => {
@@ -16,5 +16,17 @@ describe("isValidDateParam", () => {
   });
   it("rejects wrong format", () => {
     expect(isValidDateParam("26-10-2026")).toBe(false);
+  });
+});
+
+describe("isValidMonthParam", () => {
+  it("accepts YYYY-MM", () => {
+    expect(isValidMonthParam("2026-10")).toBe(true);
+  });
+  it("rejects an invalid month number", () => {
+    expect(isValidMonthParam("2026-13")).toBe(false);
+  });
+  it("rejects wrong format", () => {
+    expect(isValidMonthParam("2026/10")).toBe(false);
   });
 });
