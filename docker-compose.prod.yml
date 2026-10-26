@@ -8,25 +8,30 @@ services:
       POSTGRES_DB: together_diary
     # Next.js runs on the host via PM2 (not in this compose file), so it
     # reaches Postgres over localhost — bind only to 127.0.0.1, never 0.0.0.0.
+    # Host port 5433, not 5432, to stay clear of other services on this box
+    # (see README's "Ports" section for the full list this avoids).
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - /srv/diary-together/postgres:/var/lib/postgresql/data
 
   object-storage:
-    image: chrislusf/seaweedfs
+    image: minio/minio:latest
     restart: unless-stopped
-    command: server -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=object-storage
+    command: server /data --console-address ":9001"
+    environment:
+      # Doubles as the S3 access key/secret pair MinIO's root user already
+      # is — matches MINIO_ACCESS_KEY/MINIO_SECRET_KEY in .env directly.
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     # Pasted/background images are fetched directly by browsers (<img src>),
-    # so this must be reachable beyond localhost. Bound to 127.0.0.1 here and
-    # proxied through Nginx (see deploy/nginx.conf's /media/ block) instead of
-    # exposing the S3 port to the internet directly.
+    # so the S3 port must be reachable beyond localhost. Bound to 127.0.0.1
+    # here and routed in through the Cloudflare Tunnel's media.lmt-nqt.online
+    # ingress rule (see deploy/cloudflared-config.yml) instead of exposing it
+    # directly. Host port 9010, not 9000, to stay clear of the other MinIO
+    # already running on this box (mathneo-minio-1); 9011 for the console.
     ports:
-      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9010:9000"
+      - "127.0.0.1:9011:9001"
     volumes:
-      - object-storage-data:/data
-      - ./deploy/seaweedfs-s3-config.json:/etc/seaweedfs/s3_config.json:ro
-
-volumes:
-  postgres-data:
-  object-storage-data:
+      - /srv/nqt-math/minio:/data

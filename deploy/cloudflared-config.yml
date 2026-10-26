@@ -1,0 +1,25 @@
+# Cloudflare Tunnel config for Together Diary — replaces a reverse proxy
+# (no Nginx needed). Install cloudflared on the VPS, `cloudflared tunnel
+# login`, `cloudflared tunnel create together-diary`, add both DNS records
+# below pointing at the tunnel (`cloudflared tunnel route dns <tunnel>
+# diary.lmt-nqt.online` and `... media.lmt-nqt.online`), then run this
+# config with `cloudflared tunnel --config deploy/cloudflared-config.yml run`.
+#
+# Two subdomains, not one path-prefixed one: cloudflared's ingress rules
+# route by hostname, not path, so pasted/background images get their own
+# hostname pointed straight at the SeaweedFS S3 gateway rather than trying
+# to replicate deploy/nginx.conf's `/media/` path rewrite.
+
+tunnel: <TUNNEL-ID-FROM-cloudflared-tunnel-create>
+credentials-file: /root/.cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  - hostname: diary.lmt-nqt.online
+    service: http://127.0.0.1:3300
+
+  # Pasted/background images. Set MINIO_PUBLIC_URL="https://media.lmt-nqt.online"
+  # in .env to match.
+  - hostname: media.lmt-nqt.online
+    service: http://127.0.0.1:9010
+
+  - service: http_status:404

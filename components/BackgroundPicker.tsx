@@ -2,7 +2,9 @@
 
 import { useRef, useState } from "react";
 
-const SWATCHES = ["#fbe9d6", "#d9ecdd", "#d9e4f0", "#f0d9e8", "#3a332c", "#fffaf0"];
+// No dark/black swatch by design — a brand-new day should never default to
+// (or make it one click away to pick) a black page background.
+const SWATCHES = ["#fbe9d6", "#d9ecdd", "#d9e4f0", "#f0d9e8", "#e4ddf5", "#fffaf0"];
 
 export default function BackgroundPicker({
   backgroundType,
@@ -67,6 +69,25 @@ export default function BackgroundPicker({
               />
             ))}
           </div>
+
+          <label className="flex items-center gap-2 mb-3 cursor-pointer">
+            <span
+              className="w-7 h-7 rounded-full border border-[#e7ddd0] overflow-hidden relative shrink-0"
+              style={{
+                background:
+                  backgroundType === "color" ? backgroundValue : "conic-gradient(red,yellow,lime,cyan,blue,magenta,red)",
+              }}
+            >
+              <input
+                type="color"
+                value={backgroundType === "color" ? backgroundValue : "#d9e4f0"}
+                onChange={(e) => onChange("color", e.target.value)}
+                className="absolute -top-1 -left-1 w-10 h-10 cursor-pointer opacity-0"
+              />
+            </span>
+            <span className="text-xs text-[#7a6f62]">Tự chọn màu khác…</span>
+          </label>
+
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}

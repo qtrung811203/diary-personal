@@ -7,7 +7,9 @@ module.exports = {
       args: "run start",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        // next start -p 3300 (package.json) is what actually binds the
+        // port; kept here too for visibility/consistency.
+        PORT: 3300,
       },
     },
   ],

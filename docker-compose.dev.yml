@@ -6,8 +6,10 @@ services:
       POSTGRES_USER: together_diary
       POSTGRES_PASSWORD: together_diary
       POSTGRES_DB: together_diary
+    # Host port 5433, not 5432 — this machine already runs another Postgres
+    # on 5432 (mathneo-postgres-1). Container-internal port is unaffected.
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres-dev-data:/var/lib/postgresql/data
 
@@ -24,8 +26,10 @@ services:
     volumes:
       - object-storage-dev-data:/data
       - ./deploy/seaweedfs-s3-config.json:/etc/seaweedfs/s3_config.json:ro
+    # Host port 9010, not 9000 — this machine already runs MinIO on
+    # 9000-9001 (mathneo-minio-1). Container-internal port is unaffected.
     ports:
-      - "9000:9000"
+      - "9010:9000"
 
 volumes:
   postgres-dev-data:

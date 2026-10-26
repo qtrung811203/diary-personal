@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isValidDateParam } from "@/lib/validation";
+import { deleteImageByUrl } from "@/lib/storage";
+import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 
 export async function GET(
   _request: Request,
@@ -44,7 +46,23 @@ export async function PUT(
   const backgroundType =
     body?.backgroundType === "image" ? "image" : "color";
   const backgroundValue =
-    typeof body?.backgroundValue === "string" ? body.backgroundValue : "#fbe9d6";
+    typeof body?.backgroundValue === "string"
+      ? body.backgroundValue
+      : DEFAULT_BACKGROUND_VALUE;
+
+  const existing = await prisma.diaryEntry.findUnique({
+    where: { userId_date: { userId: session.user.id, date } },
+    select: { backgroundType: true, backgroundValue: true },
+  });
+
+  // Replacing a background image orphans the old object in storage unless
+  // it's cleaned up here — best-effort, never blocks the save on failure.
+  if (
+    existing?.backgroundType === "image" &&
+    existing.backgroundValue !== backgroundValue
+  ) {
+    deleteImageByUrl(existing.backgroundValue).catch(() => {});
+  }
 
   const entry = await prisma.diaryEntry.upsert({
     where: { userId_date: { userId: session.user.id, date } },

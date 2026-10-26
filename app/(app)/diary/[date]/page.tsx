@@ -6,6 +6,7 @@ import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
 import BackgroundPicker from "@/components/BackgroundPicker";
 import Calendar from "@/components/Calendar";
+import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 
 const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
@@ -110,7 +111,7 @@ export default function DiaryDatePage({
       contentJson: next.contentJson ?? entry?.contentJson ?? {},
       backgroundType: next.backgroundType ?? entry?.backgroundType ?? "color",
       backgroundValue:
-        next.backgroundValue ?? entry?.backgroundValue ?? "#fbe9d6",
+        next.backgroundValue ?? entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE,
     };
 
     setSaveStatus("saving");
@@ -134,7 +135,7 @@ export default function DiaryDatePage({
       entry: {
         contentJson,
         backgroundType: prev?.entry?.backgroundType ?? "color",
-        backgroundValue: prev?.entry?.backgroundValue ?? "#fbe9d6",
+        backgroundValue: prev?.entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE,
       },
     }));
     saveEntry({ contentJson });
@@ -156,7 +157,7 @@ export default function DiaryDatePage({
   const background =
     entry?.backgroundType === "image"
       ? `url(${entry.backgroundValue}) center/cover fixed`
-      : entry?.backgroundValue ?? "#fbe9d6";
+      : entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE;
 
   return (
     <div
@@ -165,40 +166,44 @@ export default function DiaryDatePage({
     >
       <div className="flex items-center justify-between flex-wrap gap-y-2 px-4 py-3.5 sm:px-7 sm:py-4.5">
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Prev/next date nav — "xem nhật ký": always available, not just
+              on past days, so browsing into yesterday doesn't require the
+              calendar first. */}
+          <button
+            className="w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
+            onClick={() => router.push(`/diary/${shiftDate(date, -1)}`)}
+            title="Ngày trước"
+          >
+            ‹
+          </button>
+
+          {/* Always a dark pill behind white text: a day's background can be
+              any color (including near-black custom picks), so the title
+              can't rely on dark text staying legible. */}
+          <div className="bg-black/55 text-white rounded-xl px-3 py-1.5 backdrop-blur-sm">
+            <div className="text-[11px] font-semibold tracking-wide uppercase text-white/80 flex items-center gap-2">
+              <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
+              {saveStatus === "saving" && <span className="normal-case font-normal text-white/70">Đang lưu…</span>}
+              {saveStatus === "saved" && <span className="normal-case font-normal text-[#9fe0ac]">Đã lưu</span>}
+              {saveStatus === "error" && <span className="normal-case font-normal text-[#ff9b8a]">Lỗi lưu — kiểm tra kết nối</span>}
+            </div>
+            <div className="text-lg sm:text-xl font-bold">{formatDisplayDate(date)}</div>
+          </div>
+
+          <button
+            className="w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
+            onClick={() => router.push(`/diary/${shiftDate(date, 1)}`)}
+            title="Ngày sau"
+          >
+            ›
+          </button>
           {!isToday && (
             <button
-              className="w-8.5 h-8.5 rounded-[10px] border border-[#e7ddd0] bg-white/80 text-sm"
-              onClick={() => router.push(`/diary/${shiftDate(date, -1)}`)}
-              title="Ngày trước"
+              className="text-xs font-bold text-[#c76f4b] bg-white shadow-sm rounded-full px-2.5 py-1"
+              onClick={() => router.push(`/diary/${todayDateString()}`)}
             >
-              ‹
+              Về hôm nay
             </button>
-          )}
-          <div>
-            <div className="text-xs font-semibold tracking-wide uppercase text-[#7a6f62] flex items-center gap-2">
-              <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
-              {saveStatus === "saving" && <span className="normal-case font-normal text-[#7a6f62]">Đang lưu…</span>}
-              {saveStatus === "saved" && <span className="normal-case font-normal text-[#6a9a71]">Đã lưu</span>}
-              {saveStatus === "error" && <span className="normal-case font-normal text-[#c0392b]">Lỗi lưu — kiểm tra kết nối</span>}
-            </div>
-            <div className="text-xl font-bold">{formatDisplayDate(date)}</div>
-          </div>
-          {!isToday && (
-            <>
-              <button
-                className="w-8.5 h-8.5 rounded-[10px] border border-[#e7ddd0] bg-white/80 text-sm"
-                onClick={() => router.push(`/diary/${shiftDate(date, 1)}`)}
-                title="Ngày sau"
-              >
-                ›
-              </button>
-              <button
-                className="text-xs font-bold text-[#c76f4b] bg-[#f0d9c9] rounded-full px-2.5 py-1"
-                onClick={() => router.push(`/diary/${todayDateString()}`)}
-              >
-                Về hôm nay
-              </button>
-            </>
           )}
         </div>
         <div className="flex items-center gap-2.5">
@@ -206,14 +211,14 @@ export default function DiaryDatePage({
             backgroundType={
               entry?.backgroundType === "image" ? "image" : "color"
             }
-            backgroundValue={entry?.backgroundValue ?? "#fbe9d6"}
+            backgroundValue={entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE}
             onChange={handleBackgroundChange}
           />
           <button
             type="button"
             title="Mở lịch"
             onClick={() => setCalendarOpen(true)}
-            className="w-10 h-10 rounded-xl border border-[#e7ddd0] bg-white/80 flex items-center justify-center text-lg"
+            className="w-10 h-10 rounded-xl border border-white/60 bg-white shadow-sm flex items-center justify-center text-lg"
           >
             📅
           </button>

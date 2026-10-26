@@ -22,7 +22,7 @@ model DiaryEntry {
   date            String
   contentJson     Json
   backgroundType  String   @default("color")
-  backgroundValue String   @default("#fbe9d6")
+  backgroundValue String   @default("#d9e4f0")
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id])
 

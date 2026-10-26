@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3300",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3300",
     "lint": "eslint",
     "test": "vitest run"
   },
@@ -14,7 +14,6 @@
     "@prisma/client": "^6.19.3",
     "@tiptap/extension-image": "^3.32.0",
     "@tiptap/extension-text-align": "^3.32.0",
-    "@tiptap/extension-underline": "^3.32.0",
     "@tiptap/pm": "^3.32.0",
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
