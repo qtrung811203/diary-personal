@@ -77,68 +77,46 @@ App, Postgres và SeaweedFS **không** dùng cổng mặc định (3000, 5432,
 > yêu cầu. App nói chuyện với cả hai qua cùng một S3 client
 > (`lib/storage.ts`), không khác gì về code.
 
-## Deploy lên VPS
+## Deploy lên VPS (toàn bộ bằng Docker)
 
-Domain: `https://diary.lmt-nqt.online` qua **Cloudflare Tunnel** (không cần
-Nginx — Cloudflare lo HTTPS/DNS, `cloudflared` chạy trên VPS nối thẳng vào
-app và object storage qua `127.0.0.1`).
+**Hướng dẫn đầy đủ, từng bước, viết cho một AI agent tự chạy trên VPS:
+[DEPLOY.md](DEPLOY.md).** Phần dưới đây chỉ là tóm tắt.
 
-**Object storage trên VPS dùng MinIO, không phải SeaweedFS** (khác với dev —
-xem lý do dưới). Dữ liệu lưu ở bind-mount, không phải Docker volume, theo
-đúng layout thư mục VPS đã dùng:
+Cả 3 phần — app Next.js, Postgres, MinIO — chạy bằng Docker qua
+`docker-compose.prod.yml` (xem [Dockerfile](Dockerfile) cho app). Domain:
+qua **Cloudflare Tunnel** (không cần Nginx — xem
+`deploy/cloudflared-config.yml`; `deploy/nginx.conf` vẫn còn làm phương án
+dự phòng nếu muốn tự terminate TLS thay vì qua Cloudflare).
 
-- Postgres: `/srv/diary-together/postgres`
-- MinIO: `/srv/nqt-math/minio`
+Dữ liệu Postgres/MinIO lưu ở bind-mount theo đúng layout thư mục VPS đã
+dùng (`/srv/diary-together/postgres`, `/srv/nqt-math/minio`), không phải
+Docker volume.
 
-Tạo 2 thư mục này trước khi `docker compose up` (ví dụ
-`mkdir -p /srv/diary-together/postgres /srv/nqt-math/minio`).
+Tóm tắt lệnh (chi tiết + giải thích từng biến `.env` xem DEPLOY.md):
 
-1. Clone repo lên VPS, copy `.env.example` → `.env` và điền giá trị thật:
-   - `NEXTAUTH_SECRET`: chuỗi ngẫu nhiên dài (`openssl rand -base64 32`).
-   - `NEXTAUTH_URL`: `https://diary.lmt-nqt.online`.
-   - `MINIO_ENDPOINT`: `http://127.0.0.1:9010` (nội bộ, app gọi S3 API).
-   - `MINIO_PUBLIC_URL`: `https://media.lmt-nqt.online` (trình duyệt dùng để
-     tải ảnh — xem `deploy/cloudflared-config.yml`).
-   - `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY`: đặt giá trị thật, đây cũng
-     chính là `MINIO_ROOT_USER`/`MINIO_ROOT_PASSWORD` của container MinIO
-     (xem `docker-compose.prod.yml`) — đổi khỏi `minioadmin/minioadmin`.
-   - `POSTGRES_PASSWORD` (dùng bởi `docker-compose.prod.yml`).
+```bash
+git clone https://github.com/qtrung811203/diary-personal.git
+cd diary-personal
+cp .env.example .env    # rồi điền NEXTAUTH_SECRET, NEXTAUTH_URL, MINIO_*, POSTGRES_PASSWORD
 
-2. Bật Postgres + MinIO:
+mkdir -p /srv/diary-together/postgres /srv/nqt-math/minio
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 
-   ```bash
-   mkdir -p /srv/diary-together/postgres /srv/nqt-math/minio
-   docker compose -f docker-compose.prod.yml up -d
-   ```
+# Cloudflare Tunnel — xem deploy/cloudflared-config.yml và DEPLOY.md Bước 5
+cloudflared tunnel login
+cloudflared tunnel create together-diary
+cloudflared tunnel route dns together-diary diary.lmt-nqt.online
+cloudflared tunnel route dns together-diary media.lmt-nqt.online
+sudo cloudflared service install --config "$(pwd)/deploy/cloudflared-config.yml"
+```
 
-3. Cài dependency, chạy migration, build:
+Cập nhật code sau này:
 
-   ```bash
-   npm install
-   npx prisma migrate deploy
-   npm run build
-   ```
-
-4. Chạy app bằng PM2 (cổng 3300, xem `ecosystem.config.js`):
-
-   ```bash
-   npm install -g pm2
-   pm2 start ecosystem.config.js
-   pm2 save
-   ```
-
-5. Cấu hình Cloudflare Tunnel: cài `cloudflared`, `cloudflared tunnel login`,
-   `cloudflared tunnel create together-diary`, trỏ DNS cho cả
-   `diary.lmt-nqt.online` và `media.lmt-nqt.online` về tunnel đó, rồi chạy
-   `cloudflared tunnel --config deploy/cloudflared-config.yml run` (hoặc cài
-   làm service: `cloudflared service install`). Chi tiết trong
-   `deploy/cloudflared-config.yml`.
-
-   (Nếu sau này đổi ý muốn dùng Nginx thay vì Cloudflare Tunnel,
-   `deploy/nginx.conf` vẫn còn và làm đúng việc tương đương.)
-
-6. Cấu hình bucket SeaweedFS đã có sẵn trong
-   `deploy/seaweedfs-s3-config.json` (một identity có quyền Admin/Read/Write
-   cho app, một identity `anonymous` chỉ có quyền `Read` để ảnh xem được công
-   khai qua URL). Đổi `accessKey`/`secretKey` trước khi deploy thật và cập
-   nhật `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY` trong `.env` cho khớp.
+```bash
+git pull origin main
+docker compose -f docker-compose.prod.yml build app
+docker compose -f docker-compose.prod.yml up -d app
+docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
+```

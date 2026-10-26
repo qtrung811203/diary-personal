@@ -1,3 +1,8 @@
+// OPTIONAL alternative to the Docker deploy (see DEPLOY.md / Dockerfile /
+// docker-compose.prod.yml, the primary path): runs the app with PM2
+// directly on the VPS instead of in a container. Postgres/MinIO would
+// still need to come from docker-compose.prod.yml (or be installed
+// separately) either way.
 module.exports = {
   apps: [
     {
