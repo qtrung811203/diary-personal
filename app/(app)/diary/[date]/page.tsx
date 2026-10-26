@@ -177,17 +177,34 @@ export default function DiaryDatePage({
             ‹
           </button>
 
-          {/* Always a dark pill behind white text: a day's background can be
-              any color (including near-black custom picks), so the title
-              can't rely on dark text staying legible. */}
-          <div className="bg-black/55 text-white rounded-xl px-3 py-1.5 backdrop-blur-sm">
-            <div className="text-[11px] font-semibold tracking-wide uppercase text-white/80 flex items-center gap-2">
+          {/* Pastel-pink pill, always on top of whatever background the day
+              has (so it stays legible on dark picks too), with the date
+              text styled like backlit embossed signage — a raised bronze
+              letterform with a soft glow behind it. */}
+          <div
+            className="rounded-xl px-3.5 py-1.5"
+            style={{
+              background: "linear-gradient(150deg, #ffdcec 0%, #ffbfdb 100%)",
+              boxShadow:
+                "inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 3px rgba(190,90,130,0.25), 0 2px 6px rgba(190,90,130,0.25)",
+            }}
+          >
+            <div className="text-[11px] font-semibold tracking-wide uppercase text-[#a4537a]/80 flex items-center gap-2">
               <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
-              {saveStatus === "saving" && <span className="normal-case font-normal text-white/70">Đang lưu…</span>}
-              {saveStatus === "saved" && <span className="normal-case font-normal text-[#9fe0ac]">Đã lưu</span>}
-              {saveStatus === "error" && <span className="normal-case font-normal text-[#ff9b8a]">Lỗi lưu — kiểm tra kết nối</span>}
+              {saveStatus === "saving" && <span className="normal-case font-normal text-[#a4537a]">Đang lưu…</span>}
+              {saveStatus === "saved" && <span className="normal-case font-normal text-[#3f8a52]">Đã lưu</span>}
+              {saveStatus === "error" && <span className="normal-case font-normal text-[#c0392b]">Lỗi lưu — kiểm tra kết nối</span>}
             </div>
-            <div className="text-lg sm:text-xl font-bold">{formatDisplayDate(date)}</div>
+            <div
+              className="text-lg sm:text-xl font-extrabold tracking-wide"
+              style={{
+                color: "#a85a3a",
+                textShadow:
+                  "0 1px 0 rgba(255,255,255,0.85), 0 -1px 1px rgba(150,70,60,0.45), 0 2px 3px rgba(150,70,60,0.35), 0 0 10px rgba(255,255,255,0.6)",
+              }}
+            >
+              {formatDisplayDate(date)}
+            </div>
           </div>
 
           <button
