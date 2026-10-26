@@ -34,6 +34,38 @@ export default function DiaryEditor({
     onUpdate: ({ editor }) => {
       debouncedOnChange(editor.getJSON());
     },
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        const imageItem = Array.from(items).find((item) =>
+          item.type.startsWith("image/")
+        );
+        if (!imageItem) return false;
+
+        const file = imageItem.getAsFile();
+        if (!file) return false;
+
+        event.preventDefault();
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        fetch("/api/upload", { method: "POST", body: formData })
+          .then((res) => res.json())
+          .then((data: { url?: string }) => {
+            if (!data.url) return;
+            view.dispatch(
+              view.state.tr.replaceSelectionWith(
+                view.state.schema.nodes.image.create({ src: data.url })
+              )
+            );
+          });
+
+        return true;
+      },
+    },
   });
 
   return (

@@ -9,6 +9,10 @@
         }
       ],
       "actions": ["Admin", "Read", "Write"]
+    },
+    {
+      "name": "anonymous",
+      "actions": ["Read"]
     }
   ]
 }
