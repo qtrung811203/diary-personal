@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime     @default(now())
+  entries      DiaryEntry[]
+}
+
+model DiaryEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  date            String
+  contentJson     Json
+  backgroundType  String   @default("color")
+  backgroundValue String   @default("#fbe9d6")
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+}
