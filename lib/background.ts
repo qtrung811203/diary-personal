@@ -9,4 +9,4 @@ export const PASTEL_PALETTE = [
 // Shared default so a brand-new entry's page isn't black (the old default
 // was a near-black swatch, which also got dropped from the picker below).
 export const DEFAULT_BACKGROUND_TYPE = "color" as const;
-export const DEFAULT_BACKGROUND_VALUE: string = PASTEL_PALETTE[0]; // pink
+export const DEFAULT_BACKGROUND_VALUE = "#FFF4DE"; // cream

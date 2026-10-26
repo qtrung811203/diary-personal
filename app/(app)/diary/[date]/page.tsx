@@ -162,7 +162,7 @@ export default function DiaryDatePage({
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col transition-colors duration-300 ease-out"
       style={{ background }}
     >
       {/* Two clean rows on mobile (date-nav, then actions) instead of one
@@ -185,17 +185,14 @@ export default function DiaryDatePage({
               with a soft drop shadow, set in the same font as the editor.
               min-w-0 + truncate so a long date never breaks the pill onto a
               second line. */}
-          <div className="flex-1 min-w-0 rounded-xl px-3.5 py-1.5 bg-[#ffd1de]">
-            <div className="text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase text-white/85 truncate">
+          <div className="flex-1 min-w-0 rounded-xl px-3.5 py-1.5 bg-[#FFF4DE]">
+            <div className="text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase text-[#5c5248]/70 truncate">
               <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
-              {saveStatus === "saving" && <span className="normal-case font-normal text-white/80"> · Đang lưu…</span>}
-              {saveStatus === "saved" && <span className="normal-case font-normal text-[#d6f5dc]"> · Đã lưu</span>}
-              {saveStatus === "error" && <span className="normal-case font-normal text-[#ffd9d0]"> · Lỗi lưu</span>}
+              {saveStatus === "saving" && <span className="normal-case font-normal text-[#5c5248]/70"> · Đang lưu…</span>}
+              {saveStatus === "saved" && <span className="normal-case font-normal text-[#3f8a52]"> · Đã lưu</span>}
+              {saveStatus === "error" && <span className="normal-case font-normal text-[#c0392b]"> · Lỗi lưu</span>}
             </div>
-            <div
-              className="text-sm sm:text-xl font-bold text-white font-[family-name:var(--font-lora)] truncate"
-              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.35)" }}
-            >
+            <div className="text-sm sm:text-xl font-bold text-[#3a332c] font-[family-name:var(--font-lora)] truncate">
               {formatDisplayDate(date)}
             </div>
           </div>
@@ -260,7 +257,7 @@ export default function DiaryDatePage({
 
       {!isToday && !loadError && (
         <div className="mx-4 sm:mx-7 mb-3.5 bg-[#fff4e5] border border-[#f0d9c0] text-[#8a5a22] text-[12.5px] font-semibold px-3.5 py-2 rounded-[10px]">
-          ✏️ Bạn đang sửa lại nhật ký của một ngày trước — thay đổi sẽ được lưu lại bình thường.
+          ✏️ Bạn đang sửa nhật ký ngày {formatDisplayDate(date)} — thay đổi sẽ được lưu lại bình thường.
         </div>
       )}
 
@@ -286,6 +283,16 @@ export default function DiaryDatePage({
             initialContent={entry?.contentJson ?? null}
             onChange={handleChange}
           />
+        )}
+        {/* Loading skeleton — switching days is a fetch, not instant, and
+            leaving this blank while the background color also jumps looked
+            like a jarring blank flash/stutter. Same shape as DiaryEditor so
+            nothing shifts when the real content swaps in. */}
+        {!loaded && !loadError && (
+          <div className="flex flex-col gap-3 sm:gap-3.5 h-full animate-pulse">
+            <div className="h-[52px] rounded-2xl bg-white/50" />
+            <div className="flex-1 rounded-[18px] bg-white/40" />
+          </div>
         )}
       </div>
     </div>

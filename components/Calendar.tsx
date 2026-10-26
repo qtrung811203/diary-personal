@@ -96,33 +96,37 @@ export default function Calendar({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full sm:w-[360px] bg-white rounded-t-[20px] sm:rounded-[20px] p-5 pb-6 relative">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-3.5 right-4 text-[#7a6f62] text-base"
-        >
-          ✕
-        </button>
-
-        <div className="flex items-center justify-between mb-3.5">
+      <div className="w-full sm:w-[360px] bg-white rounded-t-[20px] sm:rounded-[20px] p-5 pb-6">
+        {/* ‹ / Tháng X, Y / › and ✕ grouped on the right instead of
+            absolutely positioned — it used to sit right on top of ›. */}
+        <div className="flex items-center justify-between mb-3.5 gap-2">
           <button
             type="button"
             onClick={prevMonth}
-            className="w-7.5 h-7.5 rounded-lg border border-[#e7ddd0] bg-[#faf6ef] text-xs"
+            className="shrink-0 w-7.5 h-7.5 rounded-lg border border-[#e7ddd0] bg-[#faf6ef] text-xs"
           >
             ‹
           </button>
-          <div className="font-bold text-[15px]">
+          <div className="font-bold text-[15px] truncate">
             Tháng {month}, {year}
           </div>
-          <button
-            type="button"
-            onClick={nextMonth}
-            className="w-7.5 h-7.5 rounded-lg border border-[#e7ddd0] bg-[#faf6ef] text-xs"
-          >
-            ›
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={nextMonth}
+              className="w-7.5 h-7.5 rounded-lg border border-[#e7ddd0] bg-[#faf6ef] text-xs"
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Đóng"
+              className="w-7.5 h-7.5 rounded-lg border border-[#e7ddd0] bg-[#faf6ef] text-[#7a6f62] text-sm"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 mb-1">
