@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
 import BackgroundPicker from "@/components/BackgroundPicker";
+import Calendar from "@/components/Calendar";
 
 const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
@@ -48,6 +49,20 @@ export default function DiaryDatePage({
 
   const [entry, setEntry] = useState<DiaryEntryResponse>(null);
   const [loaded, setLoaded] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [writtenDates, setWrittenDates] = useState<string[]>([]);
+  const [calendarYear, calendarMonthInit] = date.split("-").map(Number);
+  const [calendarMonth, setCalendarMonth] = useState(calendarMonthInit);
+  const [calYear, setCalYear] = useState(calendarYear);
+
+  useEffect(() => {
+    const yyyymm = `${calYear}-${String(calendarMonth).padStart(2, "0")}`;
+    fetch(`/api/diary/month/${yyyymm}`)
+      .then((res) => res.json())
+      .then((data: { writtenDates: string[] }) =>
+        setWrittenDates(data.writtenDates ?? [])
+      );
+  }, [calYear, calendarMonth]);
 
   useEffect(() => {
     setLoaded(false);
@@ -98,16 +113,16 @@ export default function DiaryDatePage({
 
   const background =
     entry?.backgroundType === "image"
-      ? `url(${entry.backgroundValue}) center/cover`
+      ? `url(${entry.backgroundValue}) center/cover fixed`
       : entry?.backgroundValue ?? "#fbe9d6";
 
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background, backgroundAttachment: "fixed" }}
+      style={{ background }}
     >
-      <div className="flex items-center justify-between px-7 py-4.5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-y-2 px-4 py-3.5 sm:px-7 sm:py-4.5">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!isToday && (
             <button
               className="w-8.5 h-8.5 rounded-[10px] border border-[#e7ddd0] bg-white/80 text-sm"
@@ -149,16 +164,42 @@ export default function DiaryDatePage({
             backgroundValue={entry?.backgroundValue ?? "#fbe9d6"}
             onChange={handleBackgroundChange}
           />
+          <button
+            type="button"
+            title="Mở lịch"
+            onClick={() => setCalendarOpen(true)}
+            className="w-10 h-10 rounded-xl border border-[#e7ddd0] bg-white/80 flex items-center justify-center text-lg"
+          >
+            📅
+          </button>
         </div>
       </div>
 
+      {calendarOpen && (
+        <Calendar
+          year={calYear}
+          month={calendarMonth}
+          writtenDates={writtenDates}
+          selectedDate={date}
+          onSelectDate={(d) => {
+            setCalendarOpen(false);
+            router.push(`/diary/${d}`);
+          }}
+          onClose={() => setCalendarOpen(false)}
+          onMonthChange={(y, m) => {
+            setCalYear(y);
+            setCalendarMonth(m);
+          }}
+        />
+      )}
+
       {!isToday && (
-        <div className="mx-7 mb-3.5 bg-[#fff4e5] border border-[#f0d9c0] text-[#8a5a22] text-[12.5px] font-semibold px-3.5 py-2 rounded-[10px]">
+        <div className="mx-4 sm:mx-7 mb-3.5 bg-[#fff4e5] border border-[#f0d9c0] text-[#8a5a22] text-[12.5px] font-semibold px-3.5 py-2 rounded-[10px]">
           ✏️ Bạn đang sửa lại nhật ký của một ngày trước — thay đổi sẽ được lưu lại bình thường.
         </div>
       )}
 
-      <div className="flex-1 mx-7 mb-7">
+      <div className="flex-1 mx-4 sm:mx-7 mb-4 sm:mb-7">
         {loaded && (
           <DiaryEditor
             initialContent={entry?.contentJson ?? null}

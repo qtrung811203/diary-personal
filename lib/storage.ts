@@ -8,6 +8,10 @@ import { randomUUID } from "crypto";
 
 const endpoint = process.env.MINIO_ENDPOINT!;
 const bucket = process.env.MINIO_BUCKET!;
+// In prod the S3 gateway's internal endpoint (used by this server to talk to
+// it) and its public URL (used in <img src> by browsers, proxied via Nginx)
+// differ. Defaults to `endpoint` so local dev needs no extra env var.
+const publicUrlBase = process.env.MINIO_PUBLIC_URL ?? endpoint;
 
 const s3 = new S3Client({
   endpoint,
@@ -56,5 +60,5 @@ export async function uploadImage(
     })
   );
 
-  return `${endpoint}/${bucket}/${key}`;
+  return `${publicUrlBase}/${bucket}/${key}`;
 }

@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: together_diary
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: together_diary
+    # Next.js runs on the host via PM2 (not in this compose file), so it
+    # reaches Postgres over localhost — bind only to 127.0.0.1, never 0.0.0.0.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  object-storage:
+    image: chrislusf/seaweedfs
+    restart: unless-stopped
+    command: server -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3_config.json -dir=/data -ip=object-storage
+    # Pasted/background images are fetched directly by browsers (<img src>),
+    # so this must be reachable beyond localhost. Bound to 127.0.0.1 here and
+    # proxied through Nginx (see deploy/nginx.conf's /media/ block) instead of
+    # exposing the S3 port to the internet directly.
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - object-storage-data:/data
+      - ./deploy/seaweedfs-s3-config.json:/etc/seaweedfs/s3_config.json:ro
+
+volumes:
+  postgres-data:
+  object-storage-data:

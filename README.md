@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Together Diary
 
-## Getting Started
+Web app nhật ký cá nhân: đăng nhập/đăng ký, soạn nhật ký rich-text theo ngày
+(đậm/nghiêng/gạch chân/viết hoa-thường/căn lề), paste ảnh trực tiếp bằng
+Ctrl+V, chọn màu/ảnh nền riêng cho từng ngày, và lịch tháng để nhảy nhanh
+giữa các ngày đã viết/chưa viết.
 
-First, run the development server:
+Thiết kế theo plan: [docs/superpowers/plans/2026-10-26-together-diary-implementation.md](docs/superpowers/plans/2026-10-26-together-diary-implementation.md).
+Mockup layout gốc: [mockups/](mockups).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Tech stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Next.js 16 (App Router, TypeScript) + Tailwind CSS
+- PostgreSQL qua Prisma (ghim ở Prisma 6.19.3 — Prisma 7 đổi sang yêu cầu
+  `prisma.config.ts` + driver adapter)
+- TipTap (rich-text editor)
+- NextAuth.js (Credentials provider, JWT session)
+- SeaweedFS S3 gateway (lưu ảnh paste/nền — thay cho MinIO, vì MinIO đã khoá
+  tải Docker image/binary miễn phí kể từ 2026)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Chạy dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Copy `.env.example` thành `.env` (giá trị mặc định đã khớp với
+   `docker-compose.dev.yml`).
+2. Bật Postgres + SeaweedFS:
 
-## Learn More
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+3. Cài dependency và chạy migration:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   npm install
+   npx prisma migrate dev
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Chạy dev server:
 
-## Deploy on Vercel
+   ```bash
+   npm run dev
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   Mở [http://localhost:3000](http://localhost:3000).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. Chạy test:
+
+   ```bash
+   npm run test
+   ```
+
+> Lưu ý: SeaweedFS (all-in-one single-node) mất khoảng 10-15 giây để bầu lại
+> raft leader sau mỗi lần restart container — nếu upload/xem ảnh trả về lỗi
+> ngay sau khi restart `object-storage`, đợi vài giây rồi thử lại.
+
+## Deploy lên VPS
+
+1. Clone repo lên VPS, copy `.env.example` → `.env` và điền giá trị thật:
+   - `NEXTAUTH_SECRET`: chuỗi ngẫu nhiên dài (`openssl rand -base64 32`).
+   - `NEXTAUTH_URL`: domain thật, có `https://`.
+   - `MINIO_ENDPOINT`: `http://127.0.0.1:9000` (nội bộ, app gọi S3 API).
+   - `MINIO_PUBLIC_URL`: `https://your-domain.example/media` (trình duyệt
+     dùng để tải ảnh, đi qua Nginx — xem `deploy/nginx.conf`).
+   - `POSTGRES_PASSWORD` (dùng bởi `docker-compose.prod.yml`).
+
+2. Bật Postgres + SeaweedFS:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d
+   ```
+
+3. Cài dependency, chạy migration, build:
+
+   ```bash
+   npm install
+   npx prisma migrate deploy
+   npm run build
+   ```
+
+4. Chạy app bằng PM2:
+
+   ```bash
+   npm install -g pm2
+   pm2 start ecosystem.config.js
+   pm2 save
+   ```
+
+5. Cấu hình Nginx: copy `deploy/nginx.conf` vào
+   `/etc/nginx/sites-available/together-diary`, sửa `server_name`, symlink
+   vào `sites-enabled`, `nginx -t && systemctl reload nginx`, rồi chạy
+   `certbot --nginx` để bật HTTPS.
+
+6. Cấu hình bucket SeaweedFS đã có sẵn trong
+   `deploy/seaweedfs-s3-config.json` (một identity có quyền Admin/Read/Write
+   cho app, một identity `anonymous` chỉ có quyền `Read` để ảnh xem được công
+   khai qua URL). Đổi `accessKey`/`secretKey` trước khi deploy thật và cập
+   nhật `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY` trong `.env` cho khớp.
