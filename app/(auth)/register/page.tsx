@@ -64,7 +64,7 @@ export default function RegisterPage() {
         >
           Đăng nhập
         </Link>
-        <span className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-white text-[#c76f4b] shadow-sm">
+        <span className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-white text-[#e8829e] shadow-sm">
           Đăng ký
         </span>
       </div>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ví dụ: Trung"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
         <div>
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ban@email.com"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
         <div>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Ít nhất 8 ký tự"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
         <div>
@@ -111,7 +111,7 @@ export default function RegisterPage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
 
@@ -120,7 +120,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-1.5 bg-[#c76f4b] hover:bg-[#b45f3d] text-white rounded-lg py-3 text-[14.5px] font-semibold disabled:opacity-60"
+          className="mt-1.5 bg-[#e8829e] hover:bg-[#d96b89] text-white rounded-lg py-3 text-[14.5px] font-semibold disabled:opacity-60"
         >
           {submitting ? "Đang tạo tài khoản…" : "Tạo tài khoản"}
         </button>
@@ -128,7 +128,7 @@ export default function RegisterPage() {
 
       <p className="text-center text-[12.5px] text-[#7a6f62] mt-4">
         Đã có tài khoản?{" "}
-        <Link href="/login" className="text-[#c76f4b] font-semibold">
+        <Link href="/login" className="text-[#e8829e] font-semibold">
           Đăng nhập
         </Link>
       </p>

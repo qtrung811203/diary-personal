@@ -42,7 +42,7 @@ export default function LoginPage() {
       </div>
 
       <div className="flex bg-[#faf6ef] rounded-xl p-1 mb-6">
-        <span className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-white text-[#c76f4b] shadow-sm">
+        <span className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-white text-[#e8829e] shadow-sm">
           Đăng nhập
         </span>
         <Link
@@ -62,7 +62,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ban@email.com"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
         <div>
@@ -73,7 +73,7 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#c76f4b]"
+            className="mt-1 w-full border border-[#e7ddd0] rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#e8829e]"
           />
         </div>
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-1.5 bg-[#c76f4b] hover:bg-[#b45f3d] text-white rounded-lg py-3 text-[14.5px] font-semibold disabled:opacity-60"
+          className="mt-1.5 bg-[#e8829e] hover:bg-[#d96b89] text-white rounded-lg py-3 text-[14.5px] font-semibold disabled:opacity-60"
         >
           {submitting ? "Đang đăng nhập…" : "Đăng nhập"}
         </button>
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
       <p className="text-center text-[12.5px] text-[#7a6f62] mt-4">
         Chưa có tài khoản?{" "}
-        <Link href="/register" className="text-[#c76f4b] font-semibold">
+        <Link href="/register" className="text-[#e8829e] font-semibold">
           Đăng ký
         </Link>
       </p>

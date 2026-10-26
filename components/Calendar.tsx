@@ -146,19 +146,19 @@ export default function Calendar({
                 onClick={() => onSelectDate(cell.date)}
                 className={`aspect-square rounded-[10px] flex flex-col items-center justify-center text-[13px] ${
                   isToday
-                    ? "bg-[#c76f4b] text-white font-bold"
+                    ? "bg-[#e8829e] text-white font-bold"
                     : !cell.inMonth
                     ? "text-[#c9beb0]"
                     : isSelected
-                    ? "bg-[#f0d9c9]"
-                    : "hover:bg-[#f0d9c9]"
+                    ? "bg-[#ffd1de]"
+                    : "hover:bg-[#ffd1de]"
                 }`}
               >
                 {cell.day}
                 {hasEntry && (
                   <span
                     className={`w-[5px] h-[5px] rounded-full mt-0.5 ${
-                      isToday ? "bg-white" : "bg-[#c76f4b]"
+                      isToday ? "bg-white" : "bg-[#e8829e]"
                     }`}
                   />
                 )}
@@ -169,7 +169,7 @@ export default function Calendar({
 
         <div className="flex gap-4 mt-3.5 pt-3 border-t border-[#e7ddd0] text-[11.5px] text-[#7a6f62]">
           <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c76f4b]" /> Ngày đã viết
+            <span className="w-1.5 h-1.5 rounded-full bg-[#e8829e]" /> Ngày đã viết
           </span>
           <span>Ô trống = chưa viết</span>
         </div>

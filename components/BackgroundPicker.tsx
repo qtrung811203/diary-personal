@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PASTEL_PALETTE, DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 
-// No dark/black swatch by design — a brand-new day should never default to
-// (or make it one click away to pick) a black page background.
-const SWATCHES = ["#fbe9d6", "#d9ecdd", "#d9e4f0", "#f0d9e8", "#e4ddf5", "#fffaf0"];
+// App's brand palette first, then a couple of extra pastel options for
+// variety. No dark/black swatch by design — a brand-new day should never
+// default to (or make it one click away to pick) a black page background.
+const SWATCHES = [...PASTEL_PALETTE, "#d9e4f0", "#d9ecdd", "#fffaf0"];
 
 export default function BackgroundPicker({
   backgroundType,
@@ -63,7 +65,7 @@ export default function BackgroundPicker({
                   background: hex,
                   boxShadow:
                     backgroundType === "color" && backgroundValue === hex
-                      ? "0 0 0 2px #c76f4b"
+                      ? "0 0 0 2px #e8829e"
                       : "0 0 0 1px #e7ddd0",
                 }}
               />
@@ -80,7 +82,7 @@ export default function BackgroundPicker({
             >
               <input
                 type="color"
-                value={backgroundType === "color" ? backgroundValue : "#d9e4f0"}
+                value={backgroundType === "color" ? backgroundValue : DEFAULT_BACKGROUND_VALUE}
                 onChange={(e) => onChange("color", e.target.value)}
                 className="absolute -top-1 -left-1 w-10 h-10 cursor-pointer opacity-0"
               />

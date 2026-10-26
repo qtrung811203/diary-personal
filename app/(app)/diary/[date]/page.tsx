@@ -6,6 +6,7 @@ import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
 import BackgroundPicker from "@/components/BackgroundPicker";
 import Calendar from "@/components/Calendar";
+import CalendarIcon from "@/components/CalendarIcon";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 
 const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
@@ -164,81 +165,78 @@ export default function DiaryDatePage({
       className="min-h-screen flex flex-col"
       style={{ background }}
     >
-      <div className="flex items-center justify-between flex-wrap gap-y-2 px-4 py-3.5 sm:px-7 sm:py-4.5">
-        <div className="flex items-center gap-2 sm:gap-3">
+      {/* Two clean rows on mobile (date-nav, then actions) instead of one
+          row that wraps mid-pill; collapses to a single row from sm: up. */}
+      <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-7 sm:py-4.5">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {/* Prev/next date nav — "xem nhật ký": always available, not just
               on past days, so browsing into yesterday doesn't require the
               calendar first. */}
           <button
-            className="w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
+            className="shrink-0 w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
             onClick={() => router.push(`/diary/${shiftDate(date, -1)}`)}
             title="Ngày trước"
           >
             ‹
           </button>
 
-          {/* Pastel-pink pill, always on top of whatever background the day
-              has (so it stays legible on dark picks too), with the date
-              text styled like backlit embossed signage — a raised bronze
-              letterform with a soft glow behind it. */}
-          <div
-            className="rounded-xl px-3.5 py-1.5"
-            style={{
-              background: "linear-gradient(150deg, #ffdcec 0%, #ffbfdb 100%)",
-              boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -2px 3px rgba(190,90,130,0.25), 0 2px 6px rgba(190,90,130,0.25)",
-            }}
-          >
-            <div className="text-[11px] font-semibold tracking-wide uppercase text-[#a4537a]/80 flex items-center gap-2">
+          {/* Flat pastel-pink pill, always on top of whatever background the
+              day has (so it stays legible on dark picks too) — white text
+              with a soft drop shadow, set in the same font as the editor.
+              min-w-0 + truncate so a long date never breaks the pill onto a
+              second line. */}
+          <div className="flex-1 min-w-0 rounded-xl px-3.5 py-1.5 bg-[#ffd1de]">
+            <div className="text-[10px] sm:text-[11px] font-semibold tracking-wide uppercase text-white/85 truncate">
               <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
-              {saveStatus === "saving" && <span className="normal-case font-normal text-[#a4537a]">Đang lưu…</span>}
-              {saveStatus === "saved" && <span className="normal-case font-normal text-[#3f8a52]">Đã lưu</span>}
-              {saveStatus === "error" && <span className="normal-case font-normal text-[#c0392b]">Lỗi lưu — kiểm tra kết nối</span>}
+              {saveStatus === "saving" && <span className="normal-case font-normal text-white/80"> · Đang lưu…</span>}
+              {saveStatus === "saved" && <span className="normal-case font-normal text-[#d6f5dc]"> · Đã lưu</span>}
+              {saveStatus === "error" && <span className="normal-case font-normal text-[#ffd9d0]"> · Lỗi lưu</span>}
             </div>
             <div
-              className="text-lg sm:text-xl font-extrabold tracking-wide"
-              style={{
-                color: "#a85a3a",
-                textShadow:
-                  "0 1px 0 rgba(255,255,255,0.85), 0 -1px 1px rgba(150,70,60,0.45), 0 2px 3px rgba(150,70,60,0.35), 0 0 10px rgba(255,255,255,0.6)",
-              }}
+              className="text-sm sm:text-xl font-bold text-white font-[family-name:var(--font-lora)] truncate"
+              style={{ textShadow: "0 1px 3px rgba(0,0,0,0.35)" }}
             >
               {formatDisplayDate(date)}
             </div>
           </div>
 
           <button
-            className="w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
+            className="shrink-0 w-8.5 h-8.5 rounded-[10px] border border-white/60 bg-white shadow-sm text-sm"
             onClick={() => router.push(`/diary/${shiftDate(date, 1)}`)}
             title="Ngày sau"
           >
             ›
           </button>
-          {!isToday && (
+        </div>
+
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          {!isToday ? (
             <button
-              className="text-xs font-bold text-[#c76f4b] bg-white shadow-sm rounded-full px-2.5 py-1"
+              className="text-xs font-bold text-[#e8829e] bg-white shadow-sm rounded-full px-2.5 py-1.5"
               onClick={() => router.push(`/diary/${todayDateString()}`)}
             >
               Về hôm nay
             </button>
+          ) : (
+            <span />
           )}
-        </div>
-        <div className="flex items-center gap-2.5">
-          <BackgroundPicker
-            backgroundType={
-              entry?.backgroundType === "image" ? "image" : "color"
-            }
-            backgroundValue={entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE}
-            onChange={handleBackgroundChange}
-          />
-          <button
-            type="button"
-            title="Mở lịch"
-            onClick={() => setCalendarOpen(true)}
-            className="w-10 h-10 rounded-xl border border-white/60 bg-white shadow-sm flex items-center justify-center text-lg"
-          >
-            📅
-          </button>
+          <div className="flex items-center gap-2">
+            <BackgroundPicker
+              backgroundType={
+                entry?.backgroundType === "image" ? "image" : "color"
+              }
+              backgroundValue={entry?.backgroundValue ?? DEFAULT_BACKGROUND_VALUE}
+              onChange={handleBackgroundChange}
+            />
+            <button
+              type="button"
+              title="Xem nhật ký theo lịch"
+              onClick={() => setCalendarOpen(true)}
+              className="w-10 h-10 rounded-xl border border-white/60 bg-white shadow-sm flex items-center justify-center p-1.5"
+            >
+              <CalendarIcon className="w-full h-full" />
+            </button>
+          </div>
         </div>
       </div>
 

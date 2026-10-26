@@ -20,8 +20,8 @@ function ToolbarButton({
       type="button"
       title={title}
       onClick={onClick}
-      className={`w-8 h-8 rounded-lg text-sm hover:bg-[#f0d9c9] ${
-        active ? "bg-[#f0d9c9]" : ""
+      className={`w-8 h-8 rounded-lg text-sm hover:bg-[#ffd1de] ${
+        active ? "bg-[#ffd1de]" : ""
       } ${className}`}
     >
       {children}
