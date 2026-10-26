@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
+import BackgroundPicker from "@/components/BackgroundPicker";
 
 const WEEKDAYS = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
 
@@ -58,16 +59,41 @@ export default function DiaryDatePage({
       });
   }, [date]);
 
-  function handleChange(contentJson: JSONContent) {
+  function saveEntry(next: {
+    contentJson?: JSONContent;
+    backgroundType?: string;
+    backgroundValue?: string;
+  }) {
+    const payload = {
+      contentJson: next.contentJson ?? entry?.contentJson ?? {},
+      backgroundType: next.backgroundType ?? entry?.backgroundType ?? "color",
+      backgroundValue:
+        next.backgroundValue ?? entry?.backgroundValue ?? "#fbe9d6",
+    };
+
     fetch(`/api/diary/${date}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contentJson,
-        backgroundType: entry?.backgroundType ?? "color",
-        backgroundValue: entry?.backgroundValue ?? "#fbe9d6",
-      }),
+      body: JSON.stringify(payload),
     });
+  }
+
+  function handleChange(contentJson: JSONContent) {
+    setEntry((prev) => ({
+      contentJson,
+      backgroundType: prev?.backgroundType ?? "color",
+      backgroundValue: prev?.backgroundValue ?? "#fbe9d6",
+    }));
+    saveEntry({ contentJson });
+  }
+
+  function handleBackgroundChange(type: "color" | "image", value: string) {
+    setEntry((prev) => ({
+      contentJson: prev?.contentJson ?? {},
+      backgroundType: type,
+      backgroundValue: value,
+    }));
+    saveEntry({ backgroundType: type, backgroundValue: value });
   }
 
   const background =
@@ -114,6 +140,15 @@ export default function DiaryDatePage({
               </button>
             </>
           )}
+        </div>
+        <div className="flex items-center gap-2.5">
+          <BackgroundPicker
+            backgroundType={
+              entry?.backgroundType === "image" ? "image" : "color"
+            }
+            backgroundValue={entry?.backgroundValue ?? "#fbe9d6"}
+            onChange={handleBackgroundChange}
+          />
         </div>
       </div>
 
