@@ -5,20 +5,36 @@ export function useDebouncedCallback<T extends (...args: unknown[]) => void>(
   delayMs: number
 ): T {
   const fnRef = useRef(fn);
-  fnRef.current = fn;
+  useEffect(() => {
+    fnRef.current = fn;
+  }, [fn]);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingArgsRef = useRef<Parameters<T> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      // Flush instead of discarding: navigating away or unmounting within
+      // the debounce window (e.g. clicking prev/next right after typing)
+      // must not silently drop the last ~800ms of edits.
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        if (pendingArgsRef.current) {
+          fnRef.current(...pendingArgsRef.current);
+        }
+      }
     };
+    // Intentionally runs cleanup only on unmount, not on every delayMs change.
   }, []);
 
   return useCallback(
     (...args: Parameters<T>) => {
+      pendingArgsRef.current = args;
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => fnRef.current(...args), delayMs);
+      timeoutRef.current = setTimeout(() => {
+        pendingArgsRef.current = null;
+        fnRef.current(...args);
+      }, delayMs);
     },
     [delayMs]
   ) as T;

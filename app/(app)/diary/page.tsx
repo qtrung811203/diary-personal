@@ -1,5 +1,11 @@
-import { redirect } from "next/navigation";
+"use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+// Client-side on purpose: a server-rendered redirect would use the VPS's
+// local clock (usually UTC), which mislabels "today" for hours every day
+// for a user elsewhere (e.g. UTC+7) — see ledger Final review, finding 4.
 function todayDateString() {
   const now = new Date();
   const y = now.getFullYear();
@@ -9,5 +15,11 @@ function todayDateString() {
 }
 
 export default function DiaryIndexPage() {
-  redirect(`/diary/${todayDateString()}`);
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(`/diary/${todayDateString()}`);
+  }, [router]);
+
+  return null;
 }

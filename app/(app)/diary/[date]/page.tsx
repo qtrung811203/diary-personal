@@ -47,8 +47,20 @@ export default function DiaryDatePage({
   const router = useRouter();
   const isToday = date === todayDateString();
 
-  const [entry, setEntry] = useState<DiaryEntryResponse>(null);
-  const [loaded, setLoaded] = useState(false);
+  // Keyed by `date` so a route/date change derives loaded/loadError/entry
+  // without ever calling setState synchronously inside the fetch effect
+  // (only from its .then/.catch, which react-hooks/set-state-in-effect
+  // treats as the external-system callback it's meant for).
+  const [fetchResult, setFetchResult] = useState<{
+    date: string;
+    status: "loaded" | "error";
+    entry: DiaryEntryResponse;
+  } | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
+  const entry = fetchResult?.date === date ? fetchResult.entry : null;
+  const loaded = fetchResult?.date === date && fetchResult.status === "loaded";
+  const loadError = fetchResult?.date === date && fetchResult.status === "error";
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [writtenDates, setWrittenDates] = useState<string[]>([]);
   const [calendarYear, calendarMonthInit] = date.split("-").map(Number);
@@ -58,21 +70,36 @@ export default function DiaryDatePage({
   useEffect(() => {
     const yyyymm = `${calYear}-${String(calendarMonth).padStart(2, "0")}`;
     fetch(`/api/diary/month/${yyyymm}`)
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : { writtenDates: [] }))
       .then((data: { writtenDates: string[] }) =>
         setWrittenDates(data.writtenDates ?? [])
       );
-  }, [calYear, calendarMonth]);
+    // Refetches whenever the calendar is (re)opened too, so a dot added by
+    // an edit made since it was last open shows up without a page reload.
+  }, [calYear, calendarMonth, calendarOpen]);
 
   useEffect(() => {
-    setLoaded(false);
+    let cancelled = false;
+
     fetch(`/api/diary/${date}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load entry: ${res.status}`);
+        return res.json();
+      })
       .then((data) => {
-        setEntry(data);
-        setLoaded(true);
+        if (!cancelled) setFetchResult({ date, status: "loaded", entry: data });
+      })
+      .catch(() => {
+        // Do NOT fall back to an empty entry here — that would let the
+        // first keystroke's autosave PUT overwrite whatever is actually
+        // stored for this date. Show a retry prompt instead.
+        if (!cancelled) setFetchResult({ date, status: "error", entry: null });
       });
-  }, [date]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [date, retryTick]);
 
   function saveEntry(next: {
     contentJson?: JSONContent;
@@ -86,27 +113,42 @@ export default function DiaryDatePage({
         next.backgroundValue ?? entry?.backgroundValue ?? "#fbe9d6",
     };
 
+    setSaveStatus("saving");
     fetch(`/api/diary/${date}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    });
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        setSaveStatus("saved");
+        setWrittenDates((prev) => (prev.includes(date) ? prev : [...prev, date]));
+      })
+      .catch(() => setSaveStatus("error"));
   }
 
   function handleChange(contentJson: JSONContent) {
-    setEntry((prev) => ({
-      contentJson,
-      backgroundType: prev?.backgroundType ?? "color",
-      backgroundValue: prev?.backgroundValue ?? "#fbe9d6",
+    setFetchResult((prev) => ({
+      date,
+      status: "loaded",
+      entry: {
+        contentJson,
+        backgroundType: prev?.entry?.backgroundType ?? "color",
+        backgroundValue: prev?.entry?.backgroundValue ?? "#fbe9d6",
+      },
     }));
     saveEntry({ contentJson });
   }
 
   function handleBackgroundChange(type: "color" | "image", value: string) {
-    setEntry((prev) => ({
-      contentJson: prev?.contentJson ?? {},
-      backgroundType: type,
-      backgroundValue: value,
+    setFetchResult((prev) => ({
+      date,
+      status: "loaded",
+      entry: {
+        contentJson: prev?.entry?.contentJson ?? {},
+        backgroundType: type,
+        backgroundValue: value,
+      },
     }));
     saveEntry({ backgroundType: type, backgroundValue: value });
   }
@@ -133,8 +175,11 @@ export default function DiaryDatePage({
             </button>
           )}
           <div>
-            <div className="text-xs font-semibold tracking-wide uppercase text-[#7a6f62]">
-              {isToday ? "Hôm nay" : "Xem lại"}
+            <div className="text-xs font-semibold tracking-wide uppercase text-[#7a6f62] flex items-center gap-2">
+              <span>{isToday ? "Hôm nay" : "Xem lại"}</span>
+              {saveStatus === "saving" && <span className="normal-case font-normal text-[#7a6f62]">Đang lưu…</span>}
+              {saveStatus === "saved" && <span className="normal-case font-normal text-[#6a9a71]">Đã lưu</span>}
+              {saveStatus === "error" && <span className="normal-case font-normal text-[#c0392b]">Lỗi lưu — kiểm tra kết nối</span>}
             </div>
             <div className="text-xl font-bold">{formatDisplayDate(date)}</div>
           </div>
@@ -193,14 +238,30 @@ export default function DiaryDatePage({
         />
       )}
 
-      {!isToday && (
+      {!isToday && !loadError && (
         <div className="mx-4 sm:mx-7 mb-3.5 bg-[#fff4e5] border border-[#f0d9c0] text-[#8a5a22] text-[12.5px] font-semibold px-3.5 py-2 rounded-[10px]">
           ✏️ Bạn đang sửa lại nhật ký của một ngày trước — thay đổi sẽ được lưu lại bình thường.
         </div>
       )}
 
+      {loadError && (
+        <div className="mx-4 sm:mx-7 mb-3.5 bg-[#fdecea] border border-[#f3c6c0] text-[#c0392b] text-[12.5px] font-semibold px-3.5 py-2.5 rounded-[10px] flex items-center justify-between gap-3">
+          <span>
+            ⚠️ Không tải được nhật ký ngày này. Không có gì bị mất — hãy thử
+            lại.
+          </span>
+          <button
+            type="button"
+            onClick={() => setRetryTick((n) => n + 1)}
+            className="shrink-0 bg-white border border-[#f3c6c0] rounded-full px-3 py-1 text-xs font-bold"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
       <div className="flex-1 mx-4 sm:mx-7 mb-4 sm:mb-7">
-        {loaded && (
+        {loaded && !loadError && (
           <DiaryEditor
             initialContent={entry?.contentJson ?? null}
             onChange={handleChange}

@@ -17,3 +17,17 @@ export function isValidDateParam(value: string): boolean {
 export function isValidMonthParam(value: string): boolean {
   return MONTH_PATTERN.test(value);
 }
+
+// Raster formats only — deliberately excludes image/svg+xml, which can
+// embed <script> and would execute as active content when served back
+// same-origin (e.g. behind the /media/ proxy in deploy/nginx.conf).
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+]);
+
+export function isAllowedImageType(contentType: string): boolean {
+  return ALLOWED_IMAGE_TYPES.has(contentType);
+}

@@ -2,10 +2,10 @@
 
 import { useEditor, EditorContent, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
 import { TextCase } from "@/lib/tiptap-text-case";
+import { shouldPasteAsImage } from "@/lib/clipboard";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
 
@@ -24,7 +24,6 @@ export default function DiaryEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Underline,
       TextAlign.configure({ types: ["paragraph", "heading"] }),
       TextCase,
       Image,
@@ -42,9 +41,13 @@ export default function DiaryEditor({
         const imageItem = Array.from(items).find((item) =>
           item.type.startsWith("image/")
         );
-        if (!imageItem) return false;
+        // A clipboard carrying both text and an image (common when copying
+        // a cell from Excel/Word/OneNote, or an image off a web page) should
+        // paste as text — see lib/clipboard.ts.
+        const hasText = (event.clipboardData?.getData("text/plain") ?? "") !== "";
+        if (!shouldPasteAsImage({ hasImage: !!imageItem, hasText })) return false;
 
-        const file = imageItem.getAsFile();
+        const file = imageItem!.getAsFile();
         if (!file) return false;
 
         event.preventDefault();
@@ -53,7 +56,10 @@ export default function DiaryEditor({
         formData.append("file", file);
 
         fetch("/api/upload", { method: "POST", body: formData })
-          .then((res) => res.json())
+          .then((res) => {
+            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+            return res.json();
+          })
           .then((data: { url?: string }) => {
             if (!data.url) return;
             view.dispatch(
@@ -61,6 +67,11 @@ export default function DiaryEditor({
                 view.state.schema.nodes.image.create({ src: data.url })
               )
             );
+          })
+          .catch(() => {
+            // Pasted image failed to upload (e.g. over the 5MB limit) — the
+            // selection is left untouched rather than inserting a broken
+            // image; the user can see nothing was added and retry.
           });
 
         return true;
