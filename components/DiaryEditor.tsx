@@ -7,6 +7,7 @@ import Image from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import { TextCase } from "@/lib/tiptap-text-case";
 import { DiaryDocument, DiaryTitle } from "@/lib/tiptap-diary-title";
+import { PlainShortcuts } from "@/lib/plain-shortcuts";
 import { shouldPasteAsImage } from "@/lib/clipboard";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
@@ -37,6 +38,7 @@ export default function DiaryEditor({
       StarterKit.configure({ document: false, heading: false }),
       DiaryDocument,
       DiaryTitle,
+      PlainShortcuts,
       TextAlign.configure({ types: ["paragraph", "diaryTitle"] }),
       TextCase,
       Image,
