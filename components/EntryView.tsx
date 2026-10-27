@@ -7,12 +7,14 @@ import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
 import BackgroundPicker from "@/components/BackgroundPicker";
 import MoodPicker from "@/components/MoodPicker";
+import FontPicker from "@/components/FontPicker";
 import SidebarToggle from "@/components/SidebarToggle";
 import { TrashIcon } from "@/components/icons";
 import { useJournal } from "@/components/JournalProvider";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 import { weekdayShort } from "@/lib/dates";
 import { extractTitleAndPreview, isDocEmpty } from "@/lib/doc";
+import { DEFAULT_EDITOR_FONT, isEditorFont, type EditorFontKey } from "@/lib/fonts";
 
 type Entry = {
   id: string;
@@ -20,6 +22,7 @@ type Entry = {
   createdAt: string;
   contentJson: JSONContent;
   moodId: string | null;
+  fontFamily: string;
   backgroundType: string;
   backgroundValue: string;
 };
@@ -93,6 +96,13 @@ export default function EntryView({ id }: { id: string }) {
     void save({ moodId });
   }
 
+  function handleFont(fontFamily: EditorFontKey) {
+    setLoad((cur) =>
+      cur?.status === "loaded" ? { status: "loaded", entry: { ...cur.entry, fontFamily } } : cur
+    );
+    void save({ fontFamily });
+  }
+
   function handleBackground(type: "color" | "image", value: string) {
     setLoad((cur) =>
       cur?.status === "loaded"
@@ -146,6 +156,10 @@ export default function EntryView({ id }: { id: string }) {
         )}
         {entry && (
           <div className="ml-auto flex items-center gap-2">
+            <FontPicker
+              value={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
+              onChange={handleFont}
+            />
             <BackgroundPicker
               backgroundType={entry.backgroundType === "image" ? "image" : "color"}
               backgroundValue={entry.backgroundValue}
@@ -184,6 +198,7 @@ export default function EntryView({ id }: { id: string }) {
           <DiaryEditor
             initialContent={entry.contentJson}
             autofocus={isDocEmpty(entry.contentJson) ? "start" : "end"}
+            fontKey={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
             onLiveChange={handleLiveChange}
             onChange={(json) => void save({ contentJson: json })}
           />

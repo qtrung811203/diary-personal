@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 
 function ToolbarButton({
@@ -35,6 +36,71 @@ function ToolbarButton({
   );
 }
 
+const HIGHLIGHT_COLORS = ["#fff3a3", "#ffd1de", "#cdeccf", "#cfe3f7", "#ffe0b8"];
+
+// The color picker is position:fixed (placed from the button's rect) because
+// the mobile toolbar scrolls horizontally, and an absolutely-positioned
+// popover inside it would be clipped.
+function HighlightMenu({ editor }: { editor: Editor }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const active = editor.isActive("highlight");
+
+  function toggle() {
+    if (pos) return setPos(null);
+    const r = btnRef.current!.getBoundingClientRect();
+    const left = Math.min(Math.max(r.left, 8), window.innerWidth - 236);
+    // Docked at the bottom on mobile -> open upward; otherwise downward.
+    setPos(r.top > window.innerHeight / 2 ? { left, bottom: window.innerHeight - r.top + 8 } : { left, top: r.bottom + 8 });
+  }
+
+  function pick(color: string | null) {
+    const chain = editor.chain().focus();
+    if (color === null || editor.isActive("highlight", { color })) chain.unsetHighlight().run();
+    else chain.setHighlight({ color }).run();
+    setPos(null);
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        title="Highlight (tô nền chữ)"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggle}
+        className={`shrink-0 min-w-10 h-10 md:min-w-8 md:h-8 px-1 rounded-lg hover:bg-[#ffd1de] ${active ? "bg-[#ffd1de]" : ""}`}
+      >
+        <span className="px-1.5 rounded bg-[#fff3a3] text-sm font-bold text-[#3a332c]">A</span>
+      </button>
+      {pos && (
+        <>
+          <div className="fixed inset-0 z-40" onMouseDown={(e) => e.preventDefault()} onClick={() => setPos(null)} />
+          <div
+            className="fixed z-50 flex items-center gap-2 rounded-2xl border border-[#e7ddd0] bg-white p-2.5 shadow-xl"
+            style={pos}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {HIGHLIGHT_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                title={c}
+                onClick={() => pick(c)}
+                className="w-8 h-8 rounded-full border border-black/10"
+                style={{ background: c, boxShadow: editor.isActive("highlight", { color: c }) ? "0 0 0 2px #e8829e" : undefined }}
+              />
+            ))}
+            <button type="button" title="Bỏ highlight" onClick={() => pick(null)} className="w-8 h-8 rounded-full border border-[#e7ddd0] text-[#7a6f62] text-sm">
+              ✕
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 const Divider = () => <div className="shrink-0 w-px h-5 bg-[#e7ddd0] mx-1.5" />;
 
 // Everything StarterKit offers (marks, headings, lists, quote, code, rule,
@@ -66,6 +132,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
       <ToolbarButton title="Gạch ngang (Ctrl+Shift+S)" active={editor.isActive("strike")} onClick={() => run().toggleStrike().run()} className="line-through">
         S
       </ToolbarButton>
+      <HighlightMenu editor={editor} />
       <ToolbarButton title="Code (Ctrl+E)" active={editor.isActive("code")} onClick={() => run().toggleCode().run()} className="font-mono text-xs">
         {"</>"}
       </ToolbarButton>

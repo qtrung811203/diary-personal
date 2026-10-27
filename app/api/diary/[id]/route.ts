@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getUserId } from "@/lib/session";
 import { deleteImageByUrl } from "@/lib/storage";
 import { countWords, extractTitleAndPreview, normalizeDoc } from "@/lib/doc";
+import { isEditorFont } from "@/lib/fonts";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -29,7 +30,7 @@ export async function GET(_request: Request, { params }: Ctx) {
   return NextResponse.json({ ...entry, contentJson: normalizeDoc(entry.contentJson) });
 }
 
-// Partial update: any of contentJson / moodId / backgroundType+backgroundValue.
+// Partial update: any of contentJson / moodId / fontFamily / backgroundType+backgroundValue.
 export async function PUT(request: Request, { params }: Ctx) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,6 +74,13 @@ export async function PUT(request: Request, { params }: Ctx) {
     } else {
       return NextResponse.json({ error: "Invalid mood" }, { status: 400 });
     }
+  }
+
+  if ("fontFamily" in body) {
+    if (!isEditorFont(body.fontFamily)) {
+      return NextResponse.json({ error: "Invalid font" }, { status: 400 });
+    }
+    data.fontFamily = body.fontFamily;
   }
 
   if ("backgroundValue" in body) {

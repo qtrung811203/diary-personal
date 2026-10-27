@@ -50,6 +50,8 @@ model DiaryEntry {
   contentJson     Json
   backgroundType  String   @default("color")
   backgroundValue String   @default("#FFF4DE")
+  // Font of the entry's text (title + body) — a key from lib/fonts.ts.
+  fontFamily      String   @default("lora")
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id])
   mood            Mood?    @relation(fields: [moodId], references: [id], onDelete: SetNull)
