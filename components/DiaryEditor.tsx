@@ -7,7 +7,6 @@ import Image from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
 import { TextCase } from "@/lib/tiptap-text-case";
 import { DiaryDocument, DiaryTitle } from "@/lib/tiptap-diary-title";
-import { PlainShortcuts } from "@/lib/plain-shortcuts";
 import { shouldPasteAsImage } from "@/lib/clipboard";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
@@ -32,14 +31,14 @@ export default function DiaryEditor({
 
   const editor = useEditor({
     extensions: [
-      // The first line is the entry's title: a custom document schema
-      // ("title, then blocks") replaces the default one, and plain headings
-      // are off so the title is the only heading-like thing.
-      StarterKit.configure({ document: false, heading: false }),
+      // Full StarterKit (marks, headings, lists, quote, code, rule, undo/redo,
+      // markdown shortcuts) — only the document schema is swapped, so the
+      // first line is always the entry's title. Body headings start at H2
+      // so they never compete with the title.
+      StarterKit.configure({ document: false, heading: { levels: [2, 3] } }),
       DiaryDocument,
       DiaryTitle,
-      PlainShortcuts,
-      TextAlign.configure({ types: ["paragraph", "diaryTitle"] }),
+      TextAlign.configure({ types: ["paragraph", "heading", "diaryTitle"] }),
       TextCase,
       Image,
       Placeholder.configure({
