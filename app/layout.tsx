@@ -50,6 +50,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   interactiveWidget: "resizes-content",
+  // Light-only app: stops iOS/Android from auto-darkening or restyling it.
+  colorScheme: "light",
 };
 
 export const metadata: Metadata = {

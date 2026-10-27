@@ -116,7 +116,7 @@ export default function DiaryEditor({
       <div className="shrink-0 order-2 md:order-1">
         <EditorToolbar editor={editor} />
       </div>
-      <div className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
+      <div className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}
           style={{ fontFamily: editorFontStack(fontKey), ["--font-scale" as string]: editorFontScale(fontKey) }}

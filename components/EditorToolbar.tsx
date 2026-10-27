@@ -110,7 +110,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
   const run = () => editor.chain().focus();
 
   return (
-    <div className="flex items-center gap-0.5 flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible bg-white/90 border border-[#e7ddd0] rounded-2xl p-1.5 md:p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex items-center gap-0.5 flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-2xl p-1.5 md:p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ToolbarButton title="Hoàn tác (Ctrl+Z)" disabled={!editor.can().undo()} onClick={() => run().undo().run()}>
         ↶
       </ToolbarButton>

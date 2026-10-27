@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffaf3;
+  --foreground: #3a332c;
+  /* The whole app is a light pastel design with fixed light surfaces, so it
+     must not follow the OS dark mode: the scaffold's dark-mode variables
+     turned the inherited text color near-white (#ededed) on phones in dark
+     mode — invisible on our white cards. */
+  color-scheme: light;
 }
 
 @theme inline {
@@ -10,13 +15,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
