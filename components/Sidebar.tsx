@@ -96,7 +96,7 @@ export default function Sidebar() {
 
           {groupByMonth(entries).map((group) => (
             <section key={group.label}>
-              <div className="sticky top-0 z-10 bg-white/95 backdrop-blur px-5 py-1.5 text-[11px] font-bold tracking-wide uppercase text-[#a1968a]">
+              <div className="sticky top-0 z-10 bg-white/95 px-5 py-1.5 text-[11px] font-bold tracking-wide uppercase text-[#a1968a]">
                 {group.label}
               </div>
               <ul className="px-2">

@@ -81,7 +81,7 @@ export default function DashboardPage() {
   return (
     <div className="h-full overflow-y-auto bg-[#fffaf3]">
       <div className="max-w-5xl mx-auto px-3 sm:px-6 pb-10">
-        <header className="sticky top-0 z-10 bg-[#fffaf3]/95 backdrop-blur py-3 flex items-center gap-2 flex-wrap">
+        <header className="sticky top-0 z-10 bg-[#fffaf3]/95 py-3 flex items-center gap-2 flex-wrap">
           <SidebarToggle />
           <h1 className="text-xl font-bold text-[#3a332c] font-[family-name:var(--font-lora)] mr-1">Tổng quan</h1>
 

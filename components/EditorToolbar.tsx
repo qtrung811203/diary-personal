@@ -33,7 +33,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
   if (!editor) return null;
 
   return (
-    <div className="flex items-center gap-0.5 flex-wrap bg-white/80 border border-[#e7ddd0] rounded-2xl p-2 backdrop-blur">
+    <div className="flex items-center gap-0.5 flex-wrap bg-white/90 border border-[#e7ddd0] rounded-2xl p-2">
       <ToolbarButton
         title="Đậm (Ctrl+B)"
         active={editor.isActive("bold")}

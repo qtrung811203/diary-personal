@@ -104,7 +104,7 @@ export default function DiaryEditor({
       <div className="overflow-x-auto shrink-0">
         <EditorToolbar editor={editor} />
       </div>
-      <div className="flex-1 min-h-0 bg-white/80 border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto backdrop-blur">
+      <div className="flex-1 min-h-0 bg-white/90 border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}
           className="diary-editor max-w-[680px] mx-auto font-[family-name:var(--font-lora)] text-[15.5px] sm:text-[17px] leading-[1.75] sm:leading-[1.8] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-3.5 [&_.ProseMirror_img]:rounded-[10px] [&_.ProseMirror_img]:max-w-full"
