@@ -14,17 +14,46 @@ model User {
   name         String?
   createdAt    DateTime     @default(now())
   entries      DiaryEntry[]
+  moods        Mood[]
 }
 
+// A user's own mood list: seeded from DEFAULT_MOODS (lib/moods.ts) the first
+// time it's read, then freely editable. `group` is one of lib/moods.ts
+// MOOD_GROUPS and drives the dashboard's grouping/trend.
+model Mood {
+  id        String       @id @default(cuid())
+  userId    String
+  name      String
+  icon      String
+  group     String
+  sortOrder Int          @default(0)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   DiaryEntry[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+// Many entries per day. `date` is the user's local calendar day at creation
+// (client-supplied "YYYY-MM-DD"); `createdAt` is the exact creation instant.
+// title/preview/words are derived from contentJson on every save so the
+// sidebar and dashboard never have to parse the document.
 model DiaryEntry {
   id              String   @id @default(cuid())
   userId          String
   date            String
+  createdAt       DateTime @default(now())
+  title           String   @default("")
+  preview         String   @default("")
+  words           Int      @default(0)
+  moodId          String?
   contentJson     Json
   backgroundType  String   @default("color")
-  backgroundValue String   @default("#d9e4f0")
+  backgroundValue String   @default("#FFF4DE")
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id])
+  mood            Mood?    @relation(fields: [moodId], references: [id], onDelete: SetNull)
 
-  @@unique([userId, date])
+  @@index([userId, createdAt])
+  @@index([userId, date])
 }

@@ -1,9 +1,22 @@
 # Together Diary
 
-Web app nhật ký cá nhân: đăng nhập/đăng ký, soạn nhật ký rich-text theo ngày
+Web app nhật ký cá nhân: đăng nhập/đăng ký, soạn nhật ký rich-text
 (đậm/nghiêng/gạch chân/viết hoa-thường/căn lề), paste ảnh trực tiếp bằng
-Ctrl+V, chọn màu/ảnh nền riêng cho từng ngày (màu pastel có sẵn hoặc tự chọn
-màu), và lịch tháng để nhảy nhanh giữa các ngày đã viết/chưa viết.
+Ctrl+V, chọn màu/ảnh nền riêng cho từng nhật ký.
+
+- **Sidebar** (ẩn/hiện được; drawer trên mobile): mỗi record là một nhật ký
+  — thứ (T2…CN) + ngày, title in đậm, mô tả 2 dòng, giờ tạo, tâm trạng. Nút
+  **+** (góc trên phải sidebar) tạo nhật ký cho hôm nay; một ngày có thể có
+  nhiều nhật ký.
+- **Title** là dòng đầu của nhật ký (luôn đậm), gõ tới đâu sidebar đổi tới
+  đó.
+- **Tâm trạng**: 22 mood mẫu chia 5 nhóm (tích cực / bình thường / lo âu /
+  buồn / tức giận), người dùng tự thêm/xoá mood (lưu DB, chọn nhóm để thống
+  kê).
+- **Tổng quan** (dashboard): thống kê tuần/tháng (chuyển qua lại, lùi/tiến
+  kỳ), lịch dùng icon mood của từng ngày, phân bố nhóm cảm xúc, mood hay
+  gặp, xu hướng cảm xúc theo ngày, tâm trạng theo thứ trong tuần, chuỗi ngày
+  viết, "ngày này những năm trước".
 
 Thiết kế theo plan: [docs/superpowers/plans/2026-10-26-together-diary-implementation.md](docs/superpowers/plans/2026-10-26-together-diary-implementation.md).
 Mockup layout gốc: [mockups/](mockups).

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth-helpers";
+import { ensureMoods } from "@/lib/mood-store";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -29,6 +30,9 @@ export async function POST(request: Request) {
   const user = await prisma.user.create({
     data: { email, passwordHash, name },
   });
+
+  // Best-effort: moods are also seeded lazily on first read.
+  await ensureMoods(user.id).catch(() => {});
 
   return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
 }

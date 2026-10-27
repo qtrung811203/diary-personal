@@ -4,7 +4,9 @@ import { useEditor, EditorContent, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
+import { Placeholder } from "@tiptap/extensions";
 import { TextCase } from "@/lib/tiptap-text-case";
+import { DiaryDocument, DiaryTitle } from "@/lib/tiptap-diary-title";
 import { shouldPasteAsImage } from "@/lib/clipboard";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
@@ -12,9 +14,15 @@ import EditorToolbar from "./EditorToolbar";
 export default function DiaryEditor({
   initialContent,
   onChange,
+  onLiveChange,
+  autofocus,
 }: {
   initialContent: JSONContent | null;
+  // Debounced — this is what gets saved.
   onChange: (json: JSONContent) => void;
+  // Fires on every edit, immediately (used to keep the sidebar in sync).
+  onLiveChange?: (json: JSONContent) => void;
+  autofocus: "start" | "end";
 }) {
   const debouncedOnChange = useDebouncedCallback(
     (json: unknown) => onChange(json as JSONContent),
@@ -23,16 +31,27 @@ export default function DiaryEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      TextAlign.configure({ types: ["paragraph", "heading"] }),
+      // The first line is the entry's title: a custom document schema
+      // ("title, then blocks") replaces the default one, and plain headings
+      // are off so the title is the only heading-like thing.
+      StarterKit.configure({ document: false, heading: false }),
+      DiaryDocument,
+      DiaryTitle,
+      TextAlign.configure({ types: ["paragraph", "diaryTitle"] }),
       TextCase,
       Image,
+      Placeholder.configure({
+        placeholder: ({ node }) =>
+          node.type.name === "diaryTitle" ? "Tiêu đề" : "Viết điều gì đó…",
+      }),
     ],
     content: initialContent ?? "",
     immediatelyRender: false,
-    autofocus: "end",
+    autofocus,
     onUpdate: ({ editor }) => {
-      debouncedOnChange(editor.getJSON());
+      const json = editor.getJSON();
+      onLiveChange?.(json);
+      debouncedOnChange(json);
     },
     editorProps: {
       handlePaste: (view, event) => {
@@ -81,14 +100,14 @@ export default function DiaryEditor({
   });
 
   return (
-    <div className="flex flex-col gap-3 sm:gap-3.5 h-full">
-      <div className="overflow-x-auto">
+    <div className="flex flex-col gap-3 sm:gap-3.5 h-full min-h-0">
+      <div className="overflow-x-auto shrink-0">
         <EditorToolbar editor={editor} />
       </div>
-      <div className="flex-1 bg-white/80 border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto backdrop-blur">
+      <div className="flex-1 min-h-0 bg-white/80 border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto backdrop-blur">
         <EditorContent
           editor={editor}
-          className="max-w-[640px] mx-auto font-[family-name:var(--font-lora)] text-[15.5px] sm:text-[17px] leading-[1.75] sm:leading-[1.8] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-3.5 [&_.ProseMirror_img]:rounded-[10px] [&_.ProseMirror_img]:max-w-full"
+          className="diary-editor max-w-[680px] mx-auto font-[family-name:var(--font-lora)] text-[15.5px] sm:text-[17px] leading-[1.75] sm:leading-[1.8] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-3.5 [&_.ProseMirror_img]:rounded-[10px] [&_.ProseMirror_img]:max-w-full"
         />
       </div>
     </div>
