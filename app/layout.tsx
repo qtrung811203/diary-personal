@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Lora } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,15 @@ const lora = Lora({
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
 });
+
+// interactiveWidget: with the on-screen keyboard open, Chrome on Android
+// resizes the layout viewport (so the docked toolbar sits above the
+// keyboard) instead of just covering the bottom of the page.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   title: "Together Diary",

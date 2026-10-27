@@ -22,8 +22,11 @@ function ToolbarButton({
       type="button"
       title={title}
       onClick={onClick}
+      // Keep the editor focused: without this, tapping a button blurs it and
+      // the phone keyboard closes on every format change.
+      onMouseDown={(e) => e.preventDefault()}
       disabled={disabled}
-      className={`min-w-8 h-8 px-1 rounded-lg text-sm hover:bg-[#ffd1de] disabled:opacity-30 disabled:hover:bg-transparent ${
+      className={`shrink-0 min-w-10 h-10 md:min-w-8 md:h-8 px-1 rounded-lg text-sm hover:bg-[#ffd1de] disabled:opacity-30 disabled:hover:bg-transparent ${
         active ? "bg-[#ffd1de]" : ""
       } ${className}`}
     >
@@ -32,7 +35,7 @@ function ToolbarButton({
   );
 }
 
-const Divider = () => <div className="w-px h-5 bg-[#e7ddd0] mx-1.5" />;
+const Divider = () => <div className="shrink-0 w-px h-5 bg-[#e7ddd0] mx-1.5" />;
 
 // Everything StarterKit offers (marks, headings, lists, quote, code, rule,
 // undo/redo) plus this app's extras (UPPER/lower, alignment).
@@ -41,7 +44,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
   const run = () => editor.chain().focus();
 
   return (
-    <div className="flex items-center gap-0.5 flex-wrap bg-white/90 border border-[#e7ddd0] rounded-2xl p-2">
+    <div className="flex items-center gap-0.5 flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible bg-white/90 border border-[#e7ddd0] rounded-2xl p-1.5 md:p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ToolbarButton title="Hoàn tác (Ctrl+Z)" disabled={!editor.can().undo()} onClick={() => run().undo().run()}>
         ↶
       </ToolbarButton>
