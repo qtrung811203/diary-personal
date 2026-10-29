@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserId } from "@/lib/session";
+import { requireUnlocked } from "@/lib/session";
 import { deleteImageByUrl } from "@/lib/storage";
 import { countWords, extractTitleAndPreview, normalizeDoc } from "@/lib/doc";
 import { isEditorFont } from "@/lib/fonts";
@@ -20,8 +20,9 @@ function isDocShaped(v: unknown): boolean {
 }
 
 export async function GET(_request: Request, { params }: Ctx) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const { id } = await params;
   const entry = await prisma.diaryEntry.findFirst({ where: { id, userId } });
@@ -32,8 +33,9 @@ export async function GET(_request: Request, { params }: Ctx) {
 
 // Partial update: any of contentJson / moodId / fontFamily / backgroundType+backgroundValue.
 export async function PUT(request: Request, { params }: Ctx) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const { id } = await params;
   const body = await request.json().catch(() => null);
@@ -111,8 +113,9 @@ export async function PUT(request: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_request: Request, { params }: Ctx) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const { id } = await params;
   const entry = await prisma.diaryEntry.findFirst({

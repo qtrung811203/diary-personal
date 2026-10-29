@@ -13,6 +13,13 @@ model User {
   passwordHash String
   name         String?
   createdAt    DateTime     @default(now())
+  // 6-digit unlock PIN (bcrypt). Wrong guesses are counted per account; the
+  // 5th locks PIN attempts until pinLockedUntil (see lib/pin.ts).
+  pinHash        String?
+  pinFailedCount Int       @default(0)
+  pinLockedUntil DateTime?
+  // Bumped on password reset; JWTs carrying an older value stop working.
+  sessionVersion Int       @default(0)
   entries      DiaryEntry[]
   moods        Mood[]
 }

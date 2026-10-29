@@ -9,6 +9,7 @@ import MoodCalendar from "@/components/dashboard/MoodCalendar";
 import { Empty, GroupDonut, MoodBars, TrendChart, WeekdayChart } from "@/components/dashboard/Charts";
 import type { DashboardData } from "@/components/dashboard/types";
 import { addDays, monthRange, toDateString, weekRange } from "@/lib/dates";
+import { apiFetch } from "@/lib/api-client";
 
 type View = "week" | "month";
 
@@ -55,7 +56,7 @@ export default function DashboardPage() {
   const key = `${view}|${anchor}`;
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/dashboard?view=${view}&date=${anchor}&today=${today}`)
+    apiFetch(`/api/dashboard?view=${view}&date=${anchor}&today=${today}`)
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
       .then((data) => {

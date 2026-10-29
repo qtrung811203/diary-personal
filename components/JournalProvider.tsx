@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toDateString } from "@/lib/dates";
 import type { MoodGroup } from "@/lib/moods";
+import { apiFetch } from "@/lib/api-client";
 
 export type EntrySummary = {
   id: string;
@@ -92,7 +93,7 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/diary")
+    apiFetch("/api/diary")
       .then((r) => (r.ok ? r.json() : { entries: [] }))
       .then((d: { entries: EntrySummary[] }) => {
         if (cancelled) return;
@@ -100,7 +101,7 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
         setEntriesLoaded(true);
       })
       .catch(() => !cancelled && setEntriesLoaded(true));
-    fetch("/api/moods")
+    apiFetch("/api/moods")
       .then((r) => (r.ok ? r.json() : { moods: [] }))
       .then((d: { moods: Mood[] }) => !cancelled && setMoods(d.moods))
       .catch(() => {});
@@ -128,7 +129,7 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
     if (creating) return;
     setCreating(true);
     try {
-      const res = await fetch("/api/diary", {
+      const res = await apiFetch("/api/diary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date: toDateString(new Date()) }),
@@ -154,7 +155,7 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
   }, [creating, router, closeSidebarOnMobile]);
 
   const addMood = useCallback(async (input: MoodInput) => {
-    const res = await fetch("/api/moods", {
+    const res = await apiFetch("/api/moods", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
@@ -166,7 +167,7 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deleteMood = useCallback(async (id: string) => {
-    const res = await fetch(`/api/moods/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/moods/${id}`, { method: "DELETE" });
     if (!res.ok) return;
     setMoods((list) => list.filter((m) => m.id !== id));
     setEntries((list) => list.map((e) => (e.moodId === id ? { ...e, moodId: null } : e)));

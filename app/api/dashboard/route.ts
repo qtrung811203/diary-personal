@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserId } from "@/lib/session";
+import { requireUnlocked } from "@/lib/session";
 import { ensureMoods } from "@/lib/mood-store";
 import { isValidDateParam } from "@/lib/validation";
 import { addDays, eachDay, monthRange, weekRange } from "@/lib/dates";
@@ -21,8 +21,9 @@ const TRAILING_DAYS = 90;
 // ?view=week|month&date=YYYY-MM-DD (any day inside the period shown)
 // &today=YYYY-MM-DD (the user's own local today — streaks / "on this day").
 export async function GET(request: Request) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const url = new URL(request.url);
   const view = url.searchParams.get("view") === "week" ? "week" : "month";

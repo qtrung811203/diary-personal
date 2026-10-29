@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { lockNow, setUnlockToken } from "@/lib/api-client";
 import CalendarIcon from "./CalendarIcon";
 import { ChevronLeftIcon, PlusIcon } from "./icons";
 import { useJournal, type EntrySummary } from "./JournalProvider";
@@ -143,6 +145,29 @@ export default function Sidebar() {
               </ul>
             </section>
           ))}
+        </div>
+
+        <div className="flex gap-2 border-t border-[#f1e7da] p-3">
+          <button
+            type="button"
+            onClick={() => {
+              closeSidebarOnMobile();
+              lockNow();
+            }}
+            className="flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-[#5c5248] hover:bg-[#fff0f4] flex items-center justify-center gap-1.5"
+          >
+            🔒 Khoá ngay
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUnlockToken(null);
+              void signOut({ callbackUrl: "/login" });
+            }}
+            className="flex-1 rounded-xl px-3 py-2 text-sm font-semibold text-[#5c5248] hover:bg-[#fff0f4] flex items-center justify-center gap-1.5"
+          >
+            ↩ Đăng xuất
+          </button>
         </div>
       </aside>
     </>

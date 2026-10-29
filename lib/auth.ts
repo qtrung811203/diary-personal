@@ -28,17 +28,23 @@ export const authOptions: NextAuthOptions = {
         );
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, sv: user.sessionVersion };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.sv = (user as { sv?: number }).sv ?? 0;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.id as string;
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.sv = (token.sv as number | undefined) ?? 0;
+      }
       return session;
     },
   },

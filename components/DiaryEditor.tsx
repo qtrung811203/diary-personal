@@ -12,6 +12,7 @@ import { shouldPasteAsImage } from "@/lib/clipboard";
 import { editorFontScale, editorFontStack, type EditorFontKey } from "@/lib/fonts";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
+import { apiFetch } from "@/lib/api-client";
 
 export default function DiaryEditor({
   initialContent,
@@ -85,7 +86,7 @@ export default function DiaryEditor({
         const formData = new FormData();
         formData.append("file", file);
 
-        fetch("/api/upload", { method: "POST", body: formData })
+        apiFetch("/api/upload", { method: "POST", body: formData })
           .then((res) => {
             if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
             return res.json();

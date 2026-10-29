@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getUserId } from "@/lib/session";
+import { requireUnlocked } from "@/lib/session";
 import { isValidDateParam } from "@/lib/validation";
 import { countWords, extractTitleAndPreview, isDocEmpty, normalizeDoc } from "@/lib/doc";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
@@ -10,8 +10,9 @@ const LIST_LIMIT = 1000;
 // Sidebar list — newest first. Entries written before title/preview existed
 // (migrated one-per-day rows) are filled in here the first time they're read.
 export async function GET() {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const unfilled = await prisma.diaryEntry.findMany({
     where: { userId, title: "", preview: "", words: 0 },
@@ -43,8 +44,9 @@ export async function GET() {
 // New entry for the user's current local day (client supplies it, so the
 // "day" is the user's own calendar day, not the server's).
 export async function POST(request: Request) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const body = await request.json().catch(() => null);
   const date = typeof body?.date === "string" ? body.date : "";

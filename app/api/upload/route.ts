@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireUnlocked } from "@/lib/session";
 import { uploadImage } from "@/lib/storage";
 import { isAllowedImageType } from "@/lib/validation";
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
 
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");

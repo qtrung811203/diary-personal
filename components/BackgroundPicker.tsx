@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { PASTEL_PALETTE, DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
+import { apiFetch } from "@/lib/api-client";
 
 // App's brand palette first, then a couple of extra pastel options for
 // variety. No dark/black swatch by design — a brand-new day should never
@@ -27,7 +28,7 @@ export default function BackgroundPicker({
 
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const res = await apiFetch("/api/upload", { method: "POST", body: formData });
     if (!res.ok) return;
     const data: { url: string } = await res.json();
     onChange("image", data.url);

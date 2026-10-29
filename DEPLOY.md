@@ -161,6 +161,12 @@ docker exec together-diary-test npx prisma migrate deploy
 docker rm -f together-diary-test && docker rmi together-diary:test
 ```
 
+## Mã PIN và đăng nhập
+
+- Mỗi tài khoản phải tạo mã PIN 6 số ở lần mở đầu tiên sau khi đăng nhập; tab mới luôn hỏi PIN, tự khoá sau 5 phút không thao tác.
+- Sai PIN 5 lần thì khoá PIN 15 phút (vẫn đặt lại PIN được bằng mật khẩu). Quên mật khẩu thì dùng trang `/forgot-password` (email + PIN); đổi mật khẩu sẽ đăng xuất mọi thiết bị.
+- Cần `NEXTAUTH_SECRET` cố định: token mở khoá được ký bằng khoá này. Migration `pin_lock` chạy qua `prisma migrate deploy` như các migration khác.
+
 ## Việc KHÔNG được tự ý làm
 
 - Không đổi mật khẩu/secret của các service khác đã chạy sẵn trên VPS.

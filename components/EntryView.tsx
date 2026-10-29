@@ -15,6 +15,7 @@ import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 import { weekdayShort } from "@/lib/dates";
 import { extractTitleAndPreview, isDocEmpty } from "@/lib/doc";
 import { DEFAULT_EDITOR_FONT, isEditorFont, type EditorFontKey } from "@/lib/fonts";
+import { apiFetch } from "@/lib/api-client";
 
 type Entry = {
   id: string;
@@ -51,7 +52,7 @@ export default function EntryView({ id }: { id: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/diary/${id}`)
+    apiFetch(`/api/diary/${id}`)
       .then(async (res) => {
         if (res.status === 404) return { status: "missing" } as Load;
         if (!res.ok) throw new Error(String(res.status));
@@ -72,7 +73,7 @@ export default function EntryView({ id }: { id: string }) {
 
   function save(patch: Record<string, unknown>) {
     setSaveStatus("saving");
-    return fetch(`/api/diary/${id}`, {
+    return apiFetch(`/api/diary/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
@@ -114,7 +115,7 @@ export default function EntryView({ id }: { id: string }) {
 
   async function handleDelete() {
     if (!window.confirm("Xoá nhật ký này? Không thể khôi phục.")) return;
-    const res = await fetch(`/api/diary/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`/api/diary/${id}`, { method: "DELETE" });
     if (!res.ok) return;
     const index = entries.findIndex((e) => e.id === id);
     const neighbor = entries[index + 1] ?? entries[index - 1];

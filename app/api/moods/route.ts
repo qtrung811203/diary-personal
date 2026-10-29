@@ -1,20 +1,22 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getUserId } from "@/lib/session";
+import { requireUnlocked } from "@/lib/session";
 import { ensureMoods } from "@/lib/mood-store";
 import { validateMoodInput } from "@/lib/moods";
 
 export async function GET() {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   return NextResponse.json({ moods: await ensureMoods(userId) });
 }
 
 export async function POST(request: Request) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const guard = await requireUnlocked();
+  if (!guard.ok) return guard.response;
+  const userId = guard.userId;
 
   const parsed = validateMoodInput(await request.json().catch(() => null));
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
