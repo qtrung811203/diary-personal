@@ -14,6 +14,7 @@ import { shouldPasteAsImage } from "@/lib/clipboard";
 import { editorFontScale, editorFontStack, type EditorFontKey } from "@/lib/fonts";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
+import ImageResizeBar from "./ImageResizeBar";
 import { uploadImageFile } from "@/lib/image-upload";
 
 export default function DiaryEditor({
@@ -22,6 +23,7 @@ export default function DiaryEditor({
   onLiveChange,
   autofocus,
   fontKey,
+  editable,
 }: {
   initialContent: JSONContent | null;
   // Debounced — this is what gets saved.
@@ -31,6 +33,8 @@ export default function DiaryEditor({
   autofocus: "start" | "end";
   // Font of the text (title + body) only; the toolbar and app UI keep theirs.
   fontKey: EditorFontKey;
+  // false = read-only view (toolbar hidden, text and images locked).
+  editable: boolean;
 }) {
   const debouncedOnChange = useDebouncedCallback(
     (json: unknown) => onChange(json as JSONContent),
@@ -72,7 +76,8 @@ export default function DiaryEditor({
     ],
     content: initialContent ?? "",
     immediatelyRender: false,
-    autofocus,
+    autofocus: editable ? autofocus : false,
+    editable,
     onUpdate: ({ editor }) => {
       const json = editor.getJSON();
       onLiveChange?.(json);
@@ -153,6 +158,10 @@ export default function DiaryEditor({
   }, [editor]);
 
   useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editor, editable]);
+
+  useEffect(() => {
     if (!notice) return;
     const t = window.setTimeout(() => setNotice(null), 6000);
     return () => window.clearTimeout(t);
@@ -162,6 +171,7 @@ export default function DiaryEditor({
     <div className="flex flex-col gap-3 sm:gap-3.5 h-full min-h-0">
       {/* Mobile: docked under the writing area (just above the keyboard);
           desktop: above it. */}
+      {editable && (
       <div className="shrink-0 order-2 md:order-1 flex flex-col gap-2">
         {(uploading > 0 || notice) && (
           <div
@@ -172,8 +182,10 @@ export default function DiaryEditor({
             {notice ?? `Đang tải ảnh (${uploading})…`}
           </div>
         )}
+        <ImageResizeBar editor={editor} />
         <EditorToolbar editor={editor} onPickImages={(files) => insertRef.current(files)} />
       </div>
+      )}
       <div className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}

@@ -12,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toDateString } from "@/lib/dates";
+import { markEditIntent } from "@/lib/edit-intent";
 import type { MoodGroup } from "@/lib/moods";
 import { apiFetch } from "@/lib/api-client";
 
@@ -158,6 +159,8 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
         ...list,
       ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
       closeSidebarOnMobile();
+      // A day written after the fact opens ready to write in.
+      markEditIntent(entry.id);
       router.push(`/diary/${entry.id}`);
     } finally {
       setCreating(false);

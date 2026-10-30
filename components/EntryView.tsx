@@ -10,10 +10,11 @@ import MoodPicker from "@/components/MoodPicker";
 import FavoriteButton from "@/components/FavoriteButton";
 import FontPicker from "@/components/FontPicker";
 import SidebarToggle from "@/components/SidebarToggle";
-import { TrashIcon } from "@/components/icons";
+import { CheckIcon, PencilIcon, TrashIcon } from "@/components/icons";
 import { useJournal } from "@/components/JournalProvider";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
-import { weekdayShort } from "@/lib/dates";
+import { toDateString, weekdayShort } from "@/lib/dates";
+import { consumeEditIntent } from "@/lib/edit-intent";
 import { extractTitleAndPreview, isDocEmpty } from "@/lib/doc";
 import { DEFAULT_EDITOR_FONT, isEditorFont, type EditorFontKey } from "@/lib/fonts";
 import { apiFetch } from "@/lib/api-client";
@@ -46,10 +47,13 @@ function createdLabel(entry: { date: string; createdAt: string }) {
 // entries can only ever go to the entry it was typed in.
 export default function EntryView({ id }: { id: string }) {
   const router = useRouter();
-  const { entries, patchEntry, removeEntry } = useJournal();
+  const { entries, moods, patchEntry, removeEntry } = useJournal();
 
   const [load, setLoad] = useState<Load | null>(null);
   const [retryTick, setRetryTick] = useState(0);
+  // Past entries open read-only; today's (and one just created for a past
+  // day) open ready to write. The pencil / check buttons switch.
+  const [editing, setEditing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   useEffect(() => {
@@ -64,7 +68,11 @@ export default function EntryView({ id }: { id: string }) {
       // keystroke's autosave would then overwrite what's really stored.
       .catch(() => ({ status: "error" }) as Load)
       .then((result) => {
-        if (!cancelled) setLoad(result);
+        if (cancelled) return;
+        if (result.status === "loaded") {
+          setEditing(result.entry.date >= toDateString(new Date()) || consumeEditIntent(id));
+        }
+        setLoad(result);
       });
     return () => {
       cancelled = true;
@@ -72,6 +80,7 @@ export default function EntryView({ id }: { id: string }) {
   }, [id, retryTick]);
 
   const entry = load?.status === "loaded" ? load.entry : null;
+  const entryMood = entry?.moodId ? moods.find((m) => m.id === entry.moodId) : undefined;
 
   function save(patch: Record<string, unknown>) {
     setSaveStatus("saving");
@@ -157,7 +166,13 @@ export default function EntryView({ id }: { id: string }) {
     >
       <div className="flex items-center gap-2 px-3 sm:px-5 py-3 shrink-0 flex-wrap">
         <SidebarToggle />
-        {entry && <MoodPicker value={entry.moodId} onChange={handleMood} />}
+        {entry && editing && <MoodPicker value={entry.moodId} onChange={handleMood} />}
+        {entry && !editing && entryMood && (
+          <span className="h-10 rounded-xl border border-white/60 bg-white shadow-sm px-3 flex items-center gap-1.5 text-sm font-semibold text-[#3a332c]">
+            <span className="text-lg leading-none">{entryMood.icon}</span>
+            <span className="hidden sm:inline">{entryMood.name}</span>
+          </span>
+        )}
         {entry && <FavoriteButton value={entry.isFavorite} onChange={handleFavorite} />}
         {saveStatus !== "idle" && (
           <span className="text-xs rounded-full bg-white/75 px-2.5 py-1 text-[#6f655a]">
@@ -168,23 +183,46 @@ export default function EntryView({ id }: { id: string }) {
         )}
         {entry && (
           <div className="ml-auto flex items-center gap-2">
-            <FontPicker
-              value={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
-              onChange={handleFont}
-            />
-            <BackgroundPicker
-              backgroundType={entry.backgroundType === "image" ? "image" : "color"}
-              backgroundValue={entry.backgroundValue}
-              onChange={handleBackground}
-            />
-            <button
-              type="button"
-              title="Xoá nhật ký"
-              onClick={handleDelete}
-              className="w-10 h-10 rounded-xl border border-white/60 bg-white shadow-sm text-[#c0392b] flex items-center justify-center"
-            >
-              <TrashIcon className="w-5 h-5" />
-            </button>
+            {editing ? (
+              <>
+                <FontPicker
+                  value={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
+                  onChange={handleFont}
+                />
+                <BackgroundPicker
+                  backgroundType={entry.backgroundType === "image" ? "image" : "color"}
+                  backgroundValue={entry.backgroundValue}
+                  onChange={handleBackground}
+                />
+                <button
+                  type="button"
+                  title="Xoá nhật ký"
+                  onClick={handleDelete}
+                  className="w-10 h-10 rounded-xl border border-white/60 bg-white shadow-sm text-[#c0392b] flex items-center justify-center"
+                >
+                  <TrashIcon className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  title="Xong, chỉ xem"
+                  onClick={() => setEditing(false)}
+                  className="h-10 rounded-xl bg-[#e8829e] hover:bg-[#d96b89] text-white shadow-sm px-3 flex items-center gap-1.5 text-sm font-semibold"
+                >
+                  <CheckIcon className="w-5 h-5" />
+                  <span className="hidden sm:inline">Xong</span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                title="Chỉnh sửa nhật ký"
+                onClick={() => setEditing(true)}
+                className="h-10 rounded-xl border border-white/60 bg-white shadow-sm px-3 flex items-center gap-1.5 text-sm font-semibold text-[#3a332c] hover:bg-[#fff0f4]"
+              >
+                <PencilIcon className="w-5 h-5" />
+                Chỉnh sửa
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -211,6 +249,7 @@ export default function EntryView({ id }: { id: string }) {
             initialContent={entry.contentJson}
             autofocus={isDocEmpty(entry.contentJson) ? "start" : "end"}
             fontKey={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
+            editable={editing}
             onLiveChange={handleLiveChange}
             onChange={(json) => void save({ contentJson: json })}
           />
