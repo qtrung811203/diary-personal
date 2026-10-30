@@ -7,6 +7,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
 import Highlight from "@tiptap/extension-highlight";
 import { Placeholder } from "@tiptap/extensions";
+import { TextSelection } from "@tiptap/pm/state";
 import { TextCase } from "@/lib/tiptap-text-case";
 import { DiaryDocument, DiaryTitle } from "@/lib/tiptap-diary-title";
 import { shouldPasteAsImage } from "@/lib/clipboard";
@@ -54,7 +55,16 @@ export default function DiaryEditor({
       TextAlign.configure({ types: ["paragraph", "heading", "diaryTitle"] }),
       TextCase,
       Highlight.configure({ multicolor: true }),
-      Image,
+      // Built-in resizing: drag a corner handle (mouse or touch) to resize.
+      Image.configure({
+        resize: {
+          enabled: true,
+          directions: ["bottom-right", "bottom-left", "top-right", "top-left"],
+          minWidth: 60,
+          minHeight: 60,
+          alwaysPreserveAspectRatio: true,
+        },
+      }),
       Placeholder.configure({
         placeholder: ({ node }) =>
           node.type.name === "diaryTitle" ? "Tiêu đề" : "Viết điều gì đó…",
@@ -113,7 +123,26 @@ export default function DiaryEditor({
         try {
           const src = await uploadImageFile(file);
           if (editor.isDestroyed) return;
-          editor.chain().focus().setImage({ src }).run();
+          // Image + an empty paragraph after it: the cursor lands in that
+          // paragraph (not on the image, which would leave it selected /
+          // highlighted), so typing can continue right away.
+          const content = [{ type: "image", attrs: { src } }, { type: "paragraph" }];
+          const { $from } = editor.state.selection;
+          const chain = editor.chain().focus();
+          // The title can't hold an image: put it just below the title.
+          if ($from.parent.type.name === "diaryTitle") chain.insertContentAt($from.after(), content);
+          else chain.insertContent(content);
+          chain
+            .command(({ tr }) => {
+              let end = -1;
+              tr.doc.descendants((node, pos) => {
+                if (node.type.name === "image" && node.attrs.src === src) end = pos + node.nodeSize;
+              });
+              if (end >= 0) tr.setSelection(TextSelection.near(tr.doc.resolve(end), 1));
+              return true;
+            })
+            .scrollIntoView()
+            .run();
         } catch (e) {
           setNotice(e instanceof Error ? e.message : "Không thêm được ảnh.");
         } finally {
