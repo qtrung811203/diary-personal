@@ -7,14 +7,14 @@ import TextAlign from "@tiptap/extension-text-align";
 import Image from "@tiptap/extension-image";
 import Highlight from "@tiptap/extension-highlight";
 import { Placeholder } from "@tiptap/extensions";
-import { TextSelection } from "@tiptap/pm/state";
+import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import { TextCase } from "@/lib/tiptap-text-case";
 import { DiaryDocument, DiaryTitle } from "@/lib/tiptap-diary-title";
 import { shouldPasteAsImage } from "@/lib/clipboard";
 import { editorFontScale, editorFontStack, type EditorFontKey } from "@/lib/fonts";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
-import ImageResizeBar from "./ImageResizeBar";
+import ImageTools from "./ImageTools";
 import { uploadImageFile } from "@/lib/image-upload";
 
 export default function DiaryEditor({
@@ -46,6 +46,8 @@ export default function DiaryEditor({
   const insertRef = useRef<(files: File[]) => void>(() => {});
   const [uploading, setUploading] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
+  // Image resize mode (see ImageTools); a just-inserted photo starts in it.
+  const [resizing, setResizing] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -124,13 +126,15 @@ export default function DiaryEditor({
       setUploading((n) => n + images.length);
       setNotice(null);
       // One at a time, in the order picked, each at the cursor.
-      for (const file of images) {
+      for (const [index, file] of images.entries()) {
+        const last = index === images.length - 1;
         try {
           const src = await uploadImageFile(file);
           if (editor.isDestroyed) return;
-          // Image + an empty paragraph after it: the cursor lands in that
-          // paragraph (not on the image, which would leave it selected /
-          // highlighted), so typing can continue right away.
+          // Image + an empty paragraph after it. The cursor lands in that
+          // paragraph so typing can continue — except for the last photo,
+          // which is left selected in resize mode (✓ then drops the cursor
+          // below it).
           const content = [{ type: "image", attrs: { src } }, { type: "paragraph" }];
           const { $from } = editor.state.selection;
           const chain = editor.chain().focus();
@@ -139,15 +143,25 @@ export default function DiaryEditor({
           else chain.insertContent(content);
           chain
             .command(({ tr }) => {
+              let start = -1;
               let end = -1;
               tr.doc.descendants((node, pos) => {
-                if (node.type.name === "image" && node.attrs.src === src) end = pos + node.nodeSize;
+                if (node.type.name === "image" && node.attrs.src === src) {
+                  start = pos;
+                  end = pos + node.nodeSize;
+                }
               });
-              if (end >= 0) tr.setSelection(TextSelection.near(tr.doc.resolve(end), 1));
+              if (end < 0) return true;
+              if (last) tr.setSelection(NodeSelection.create(tr.doc, start));
+              else tr.setSelection(TextSelection.near(tr.doc.resolve(end), 1));
               return true;
             })
             .scrollIntoView()
             .run();
+          if (last) {
+            setResizing(true);
+            if (window.matchMedia("(pointer: coarse)").matches) editor.view.dom.blur();
+          }
         } catch (e) {
           setNotice(e instanceof Error ? e.message : "Không thêm được ảnh.");
         } finally {
@@ -182,11 +196,11 @@ export default function DiaryEditor({
             {notice ?? `Đang tải ảnh (${uploading})…`}
           </div>
         )}
-        <ImageResizeBar editor={editor} />
+        <ImageTools editor={editor} resizing={resizing} setResizing={setResizing} />
         <EditorToolbar editor={editor} onPickImages={(files) => insertRef.current(files)} />
       </div>
       )}
-      <div className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
+      <div data-resizing={resizing ? "true" : "false"} className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}
           style={{ fontFamily: editorFontStack(fontKey), ["--font-scale" as string]: editorFontScale(fontKey) }}

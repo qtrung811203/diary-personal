@@ -83,8 +83,9 @@ body {
 .diary-editor .ProseMirror .ProseMirror-selectednode img,
 .diary-editor .ProseMirror img.ProseMirror-selectednode { outline: 2px solid #e8829e; outline-offset: 2px; }
 
-/* Resize handles for images (TipTap's built-in resize): big enough to grab
-   with a finger, only shown while hovering or after tapping the image. */
+/* Resize handles (TipTap's built-in resize): invisible and inert until the
+   image's "Chỉnh sửa" button turns resize mode on (data-resizing on the card),
+   then big enough to grab with a finger. */
 .diary-editor .ProseMirror [data-resize-wrapper] { max-width: 100%; width: fit-content; }
 .diary-editor .ProseMirror [data-resize-wrapper] img { max-width: 100%; height: auto; }
 .diary-editor .ProseMirror [data-resize-handle] {
@@ -95,7 +96,7 @@ body {
   border: 3px solid #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
   opacity: 0;
-  transition: opacity 0.15s;
+  pointer-events: none;
   touch-action: none;
   z-index: 2;
 }
@@ -103,6 +104,7 @@ body {
 .diary-editor .ProseMirror [data-resize-handle="bottom-left"] { transform: translate(-50%, 50%); cursor: nesw-resize; }
 .diary-editor .ProseMirror [data-resize-handle="top-right"] { transform: translate(50%, -50%); cursor: nesw-resize; }
 .diary-editor .ProseMirror [data-resize-handle="top-left"] { transform: translate(-50%, -50%); cursor: nwse-resize; }
-.diary-editor .ProseMirror [data-resize-wrapper]:hover [data-resize-handle],
-.diary-editor .ProseMirror .ProseMirror-selectednode [data-resize-handle],
-.diary-editor .ProseMirror [data-resize-wrapper].ProseMirror-selectednode [data-resize-handle] { opacity: 1; }
+[data-resizing="true"] .diary-editor .ProseMirror .ProseMirror-selectednode [data-resize-handle] {
+  opacity: 1;
+  pointer-events: auto;
+}
