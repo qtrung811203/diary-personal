@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent, type JSONContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
@@ -12,7 +13,7 @@ import { shouldPasteAsImage } from "@/lib/clipboard";
 import { editorFontScale, editorFontStack, type EditorFontKey } from "@/lib/fonts";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import EditorToolbar from "./EditorToolbar";
-import { apiFetch } from "@/lib/api-client";
+import { uploadImageFile } from "@/lib/image-upload";
 
 export default function DiaryEditor({
   initialContent,
@@ -34,6 +35,12 @@ export default function DiaryEditor({
     (json: unknown) => onChange(json as JSONContent),
     800
   );
+
+  // Paste/drop handlers live in editorProps (created before `editor` exists),
+  // so they reach the inserter through a ref.
+  const insertRef = useRef<(files: File[]) => void>(() => {});
+  const [uploading, setUploading] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -82,46 +89,67 @@ export default function DiaryEditor({
         if (!file) return false;
 
         event.preventDefault();
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        apiFetch("/api/upload", { method: "POST", body: formData })
-          .then((res) => {
-            if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-            return res.json();
-          })
-          .then((data: { url?: string }) => {
-            if (!data.url) return;
-            view.dispatch(
-              view.state.tr.replaceSelectionWith(
-                view.state.schema.nodes.image.create({ src: data.url })
-              )
-            );
-          })
-          .catch(() => {
-            // Pasted image failed to upload (e.g. over the 5MB limit) — the
-            // selection is left untouched rather than inserting a broken
-            // image; the user can see nothing was added and retry.
-          });
-
+        insertRef.current([file]);
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const files = Array.from(event.dataTransfer?.files ?? []).filter((f) => f.type.startsWith("image/"));
+        if (files.length === 0) return false;
+        event.preventDefault();
+        insertRef.current(files);
         return true;
       },
     },
   });
 
+  useEffect(() => {
+    insertRef.current = async (files) => {
+      const images = files.filter((f) => f.type.startsWith("image/"));
+      if (!editor || images.length === 0) return;
+      setUploading((n) => n + images.length);
+      setNotice(null);
+      // One at a time, in the order picked, each at the cursor.
+      for (const file of images) {
+        try {
+          const src = await uploadImageFile(file);
+          if (editor.isDestroyed) return;
+          editor.chain().focus().setImage({ src }).run();
+        } catch (e) {
+          setNotice(e instanceof Error ? e.message : "Không thêm được ảnh.");
+        } finally {
+          setUploading((n) => n - 1);
+        }
+      }
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 6000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
+
   return (
     <div className="flex flex-col gap-3 sm:gap-3.5 h-full min-h-0">
       {/* Mobile: docked under the writing area (just above the keyboard);
           desktop: above it. */}
-      <div className="shrink-0 order-2 md:order-1">
-        <EditorToolbar editor={editor} />
+      <div className="shrink-0 order-2 md:order-1 flex flex-col gap-2">
+        {(uploading > 0 || notice) && (
+          <div
+            className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${
+              notice ? "bg-[#fdecea] text-[#c0392b]" : "bg-white/90 text-[#6f655a]"
+            }`}
+          >
+            {notice ?? `Đang tải ảnh (${uploading})…`}
+          </div>
+        )}
+        <EditorToolbar editor={editor} onPickImages={(files) => insertRef.current(files)} />
       </div>
       <div className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}
           style={{ fontFamily: editorFontStack(fontKey), ["--font-scale" as string]: editorFontScale(fontKey) }}
-          className="diary-editor max-w-[680px] mx-auto text-[15.5px] sm:text-[17px] leading-[1.75] sm:leading-[1.8] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-3.5 [&_.ProseMirror_img]:rounded-[10px] [&_.ProseMirror_img]:max-w-full"
+          className="diary-editor max-w-[680px] mx-auto text-[15.5px] sm:text-[17px] leading-[1.75] sm:leading-[1.8] [&_.ProseMirror]:outline-none [&_.ProseMirror_p]:my-3.5 [&_.ProseMirror_img]:rounded-[10px] [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:h-auto"
         />
       </div>
     </div>

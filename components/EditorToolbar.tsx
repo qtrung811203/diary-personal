@@ -101,11 +101,74 @@ function HighlightMenu({ editor }: { editor: Editor }) {
   );
 }
 
+// Opens the phone's camera (capture) or photo library; desktop gets a file
+// dialog. The inputs must be clicked straight from the tap for iOS to allow it.
+function ImageMenu({ onPick }: { onPick: (files: File[]) => void }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const libraryRef = useRef<HTMLInputElement>(null);
+  const [pos, setPos] = useState<{ left: number; top?: number; bottom?: number } | null>(null);
+  const [touch, setTouch] = useState(false);
+
+  function toggle() {
+    if (pos) return setPos(null);
+    setTouch(window.matchMedia("(pointer: coarse)").matches);
+    const r = btnRef.current!.getBoundingClientRect();
+    const left = Math.min(Math.max(r.left, 8), window.innerWidth - 220);
+    setPos(r.top > window.innerHeight / 2 ? { left, bottom: window.innerHeight - r.top + 8 } : { left, top: r.bottom + 8 });
+  }
+
+  function chosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    setPos(null);
+    if (files.length) onPick(files);
+  }
+
+  const item = "w-full text-left rounded-xl px-3 py-2.5 text-sm font-semibold hover:bg-[#fff0f4] flex items-center gap-2";
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        title="Thêm ảnh"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={toggle}
+        className="shrink-0 min-w-10 h-10 md:min-w-8 md:h-8 px-1 rounded-lg text-base hover:bg-[#ffd1de]"
+      >
+        🖼
+      </button>
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={chosen} />
+      <input ref={libraryRef} type="file" accept="image/*" multiple className="hidden" onChange={chosen} />
+      {pos && (
+        <>
+          <div className="fixed inset-0 z-40" onMouseDown={(e) => e.preventDefault()} onClick={() => setPos(null)} />
+          <div
+            className="fixed z-50 w-[210px] rounded-2xl border border-[#e7ddd0] bg-white p-1.5 shadow-xl"
+            style={pos}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            {touch && (
+              <button type="button" className={item} onClick={() => cameraRef.current?.click()}>
+                📷 Chụp ảnh
+              </button>
+            )}
+            <button type="button" className={item} onClick={() => libraryRef.current?.click()}>
+              🖼 {touch ? "Chọn từ thư viện" : "Chọn ảnh từ máy"}
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 const Divider = () => <div className="shrink-0 w-px h-5 bg-[#e7ddd0] mx-1.5" />;
 
 // Everything StarterKit offers (marks, headings, lists, quote, code, rule,
 // undo/redo) plus this app's extras (UPPER/lower, alignment).
-export default function EditorToolbar({ editor }: { editor: Editor | null }) {
+export default function EditorToolbar({ editor, onPickImages }: { editor: Editor | null; onPickImages: (files: File[]) => void }) {
   if (!editor) return null;
   const run = () => editor.chain().focus();
 
@@ -117,6 +180,7 @@ export default function EditorToolbar({ editor }: { editor: Editor | null }) {
       <ToolbarButton title="Làm lại (Ctrl+Shift+Z)" disabled={!editor.can().redo()} onClick={() => run().redo().run()}>
         ↷
       </ToolbarButton>
+      <ImageMenu onPick={onPickImages} />
 
       <Divider />
 
