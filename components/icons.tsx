@@ -39,3 +39,10 @@ export const ChevronRightIcon = ({ className }: P) => (
     <path d="m9 6 6 6-6 6" />
   </svg>
 );
+
+// Heart: filled = favorited. fill/stroke follow currentColor.
+export const HeartIcon = ({ className, filled }: P & { filled?: boolean }) => (
+  <svg {...base} fill={filled ? "currentColor" : "none"} className={className}>
+    <path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 7.9 3.6 4.8 6.8 4.8c2 0 3.5 1.1 5.2 3.2 1.7-2.1 3.2-3.2 5.2-3.2 3.2 0 5.1 3.1 4 6.3-1.7 4.8-9.2 9.4-9.2 9.4Z" />
+  </svg>
+);

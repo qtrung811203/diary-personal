@@ -167,6 +167,10 @@ docker rm -f together-diary-test && docker rmi together-diary:test
 - Sai PIN 5 lần thì khoá PIN 15 phút (vẫn đặt lại PIN được bằng mật khẩu). Quên mật khẩu thì dùng trang `/forgot-password` (email + PIN); đổi mật khẩu sẽ đăng xuất mọi thiết bị.
 - Cần `NEXTAUTH_SECRET` cố định: token mở khoá được ký bằng khoá này. Migration `pin_lock` chạy qua `prisma migrate deploy` như các migration khác.
 
+## Yêu thích và nhật ký ngày cũ
+
+Migration `entry_favorite` thêm cột `isFavorite`; chạy qua `prisma migrate deploy` như các migration khác. Nhật ký ngày cũ tạo từ trang Tổng quan (bấm ô ngày trống trong quá khứ).
+
 ## Việc KHÔNG được tự ý làm
 
 - Không đổi mật khẩu/secret của các service khác đã chạy sẵn trên VPS.

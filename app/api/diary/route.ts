@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUnlocked } from "@/lib/session";
 import { isValidDateParam } from "@/lib/validation";
+import { isNotFutureDate, isPlausibleCreatedAt } from "@/lib/entry-dates";
 import { countWords, extractTitleAndPreview, isDocEmpty, normalizeDoc } from "@/lib/doc";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 
@@ -36,7 +37,7 @@ export async function GET() {
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: LIST_LIMIT,
-    select: { id: true, date: true, createdAt: true, title: true, preview: true, moodId: true },
+    select: { id: true, date: true, createdAt: true, title: true, preview: true, moodId: true, isFavorite: true },
   });
   return NextResponse.json({ entries });
 }
@@ -54,10 +55,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid date" }, { status: 400 });
   }
 
+  // Backdated entries: the client sends the chosen day plus an instant on that
+  // day (so the sidebar, sorted by createdAt, files it under the right date).
+  const nowMs = Date.now();
+  if (!isNotFutureDate(date, nowMs)) {
+    return NextResponse.json({ error: "Không thể tạo nhật ký cho ngày trong tương lai." }, { status: 400 });
+  }
+  let createdAt: Date | undefined;
+  if (body?.createdAt !== undefined) {
+    if (typeof body.createdAt !== "string" || !isPlausibleCreatedAt(body.createdAt, date, nowMs)) {
+      return NextResponse.json({ error: "Invalid createdAt" }, { status: 400 });
+    }
+    createdAt = new Date(body.createdAt);
+  }
+
   const entry = await prisma.diaryEntry.create({
     data: {
       userId,
       date,
+      ...(createdAt && { createdAt }),
       contentJson: normalizeDoc(null) as object,
       backgroundType: "color",
       backgroundValue: DEFAULT_BACKGROUND_VALUE,

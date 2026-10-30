@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import SidebarToggle from "@/components/SidebarToggle";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
+import CreatePastEntryDialog from "@/components/CreatePastEntryDialog";
 import { useJournal } from "@/components/JournalProvider";
 import MoodCalendar from "@/components/dashboard/MoodCalendar";
 import { Empty, GroupDonut, MoodBars, TrendChart, WeekdayChart } from "@/components/dashboard/Charts";
@@ -46,7 +47,8 @@ function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: st
 }
 
 export default function DashboardPage() {
-  const { entries } = useJournal();
+  const { entries, createEntry, creating } = useJournal();
+  const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [view, setView] = useState<View>("month");
   // Dates are the user's own local days; "today" comes from the browser.
   const [today] = useState(() => toDateString(new Date()));
@@ -73,6 +75,8 @@ export default function DashboardPage() {
     for (const e of entries) if (!map.has(e.date)) map.set(e.date, e.id);
     return map;
   }, [entries]);
+
+  const favoriteDates = useMemo(() => new Set(entries.filter((e) => e.isFavorite).map((e) => e.date)), [entries]);
 
   const data = result?.key === key ? result.data : null;
   const loading = result?.key !== key;
@@ -184,6 +188,8 @@ export default function DashboardPage() {
                   today={data.today}
                   dailyMoods={data.dailyMoods}
                   entryByDate={entryByDate}
+                  favoriteDates={favoriteDates}
+                  onPickEmptyDay={setPickedDay}
                 />
               </Card>
 
@@ -232,6 +238,15 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {pickedDay && (
+        <CreatePastEntryDialog
+          date={pickedDay}
+          busy={creating}
+          onClose={() => setPickedDay(null)}
+          onConfirm={() => void createEntry(pickedDay).then(() => setPickedDay(null))}
+        />
+      )}
     </div>
   );
 }

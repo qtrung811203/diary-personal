@@ -31,7 +31,7 @@ export default function DiaryIndexPage() {
         </p>
         <button
           type="button"
-          onClick={createEntry}
+          onClick={() => void createEntry()}
           disabled={creating}
           className="inline-flex items-center gap-2 rounded-xl bg-[#e8829e] hover:bg-[#d96b89] text-white font-semibold px-5 py-2.5 shadow-sm disabled:opacity-60"
         >

@@ -78,6 +78,13 @@ export async function PUT(request: Request, { params }: Ctx) {
     }
   }
 
+  if ("isFavorite" in body) {
+    if (typeof body.isFavorite !== "boolean") {
+      return NextResponse.json({ error: "Invalid isFavorite" }, { status: 400 });
+    }
+    data.isFavorite = body.isFavorite;
+  }
+
   if ("fontFamily" in body) {
     if (!isEditorFont(body.fontFamily)) {
       return NextResponse.json({ error: "Invalid font" }, { status: 400 });
@@ -108,6 +115,7 @@ export async function PUT(request: Request, { params }: Ctx) {
     title: entry.title,
     preview: entry.preview,
     moodId: entry.moodId,
+    isFavorite: entry.isFavorite,
     updatedAt: entry.updatedAt,
   });
 }

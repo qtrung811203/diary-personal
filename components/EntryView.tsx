@@ -7,6 +7,7 @@ import type { JSONContent } from "@tiptap/react";
 import DiaryEditor from "@/components/DiaryEditor";
 import BackgroundPicker from "@/components/BackgroundPicker";
 import MoodPicker from "@/components/MoodPicker";
+import FavoriteButton from "@/components/FavoriteButton";
 import FontPicker from "@/components/FontPicker";
 import SidebarToggle from "@/components/SidebarToggle";
 import { TrashIcon } from "@/components/icons";
@@ -23,6 +24,7 @@ type Entry = {
   createdAt: string;
   contentJson: JSONContent;
   moodId: string | null;
+  isFavorite: boolean;
   fontFamily: string;
   backgroundType: string;
   backgroundValue: string;
@@ -97,6 +99,14 @@ export default function EntryView({ id }: { id: string }) {
     void save({ moodId });
   }
 
+  function handleFavorite(isFavorite: boolean) {
+    setLoad((cur) =>
+      cur?.status === "loaded" ? { status: "loaded", entry: { ...cur.entry, isFavorite } } : cur
+    );
+    patchEntry(id, { isFavorite });
+    void save({ isFavorite });
+  }
+
   function handleFont(fontFamily: EditorFontKey) {
     setLoad((cur) =>
       cur?.status === "loaded" ? { status: "loaded", entry: { ...cur.entry, fontFamily } } : cur
@@ -148,6 +158,7 @@ export default function EntryView({ id }: { id: string }) {
       <div className="flex items-center gap-2 px-3 sm:px-5 py-3 shrink-0 flex-wrap">
         <SidebarToggle />
         {entry && <MoodPicker value={entry.moodId} onChange={handleMood} />}
+        {entry && <FavoriteButton value={entry.isFavorite} onChange={handleFavorite} />}
         {saveStatus !== "idle" && (
           <span className="text-xs rounded-full bg-white/75 px-2.5 py-1 text-[#6f655a]">
             {saveStatus === "saving" && "Đang lưu…"}

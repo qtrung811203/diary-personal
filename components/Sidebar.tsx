@@ -5,27 +5,12 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { lockNow, setUnlockToken } from "@/lib/api-client";
 import CalendarIcon from "./CalendarIcon";
-import { ChevronLeftIcon, PlusIcon } from "./icons";
-import { useJournal, type EntrySummary } from "./JournalProvider";
+import { ChevronLeftIcon, HeartIcon, PlusIcon } from "./icons";
+import { useJournal } from "./JournalProvider";
+import { groupByMonth } from "@/lib/entry-dates";
 import { weekdayShort } from "@/lib/dates";
 
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
-
-function monthLabel(date: string) {
-  const [y, m] = date.split("-");
-  return `Tháng ${Number(m)}, ${y}`;
-}
-
-function groupByMonth(entries: EntrySummary[]) {
-  const groups: { label: string; items: EntrySummary[] }[] = [];
-  for (const e of entries) {
-    const label = monthLabel(e.date);
-    const last = groups[groups.length - 1];
-    if (last && last.label === label) last.items.push(e);
-    else groups.push({ label, items: [e] });
-  }
-  return groups;
-}
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -35,6 +20,8 @@ export default function Sidebar() {
   const moodById = new Map(moods.map((m) => [m.id, m]));
   const activeId = pathname.startsWith("/diary/") ? pathname.split("/")[2] : null;
   const onDashboard = pathname.startsWith("/dashboard");
+  const onFavorites = pathname.startsWith("/favorites");
+  const favoriteCount = entries.filter((e) => e.isFavorite).length;
 
   // Mobile: a drawer that starts closed. Desktop: open unless the user hid it.
   const visibility = `${mobileOpen ? "flex" : "hidden"} ${desktopOpen === false ? "md:hidden" : "md:flex"}`;
@@ -59,7 +46,7 @@ export default function Sidebar() {
           <h1 className="flex-1 font-bold text-[#3a332c] font-[family-name:var(--font-lora)] text-lg">Nhật ký</h1>
           <button
             type="button"
-            onClick={createEntry}
+            onClick={() => void createEntry()}
             disabled={creating}
             title="Viết nhật ký hôm nay"
             className="w-9 h-9 rounded-xl bg-[#e8829e] hover:bg-[#d96b89] text-white flex items-center justify-center shadow-sm disabled:opacity-60"
@@ -77,6 +64,20 @@ export default function Sidebar() {
         >
           <CalendarIcon className="w-7 h-7 shrink-0" />
           Tổng quan
+        </Link>
+
+        <Link
+          href="/favorites"
+          onClick={closeSidebarOnMobile}
+          className={`mx-3 mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+            onFavorites ? "bg-[#ffd1de] text-[#3a332c]" : "text-[#5c5248] hover:bg-[#fff0f4]"
+          }`}
+        >
+          <span className="w-7 h-7 shrink-0 flex items-center justify-center text-[#e8829e]">
+            <HeartIcon filled className="w-5 h-5" />
+          </span>
+          <span className="flex-1">Yêu thích</span>
+          {favoriteCount > 0 && <span className="text-xs font-bold text-[#a1968a]">{favoriteCount}</span>}
         </Link>
 
         <div className="flex-1 overflow-y-auto mt-2 pb-4">

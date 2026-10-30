@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { weekdayIndex } from "@/lib/dates";
+import { HeartIcon } from "@/components/icons";
 import type { DMood } from "./types";
 
 const HEADERS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -14,12 +15,18 @@ export default function MoodCalendar({
   today,
   dailyMoods,
   entryByDate,
+  favoriteDates,
+  onPickEmptyDay,
 }: {
   days: string[];
   view: "week" | "month";
   today: string;
   dailyMoods: Record<string, DMood>;
   entryByDate: Map<string, string>;
+  // Days with at least one favorite entry get a small heart badge.
+  favoriteDates: Set<string>;
+  // Past days with no entry can be tapped to create one.
+  onPickEmptyDay: (date: string) => void;
 }) {
   const blanks = weekdayIndex(days[0]);
   const big = view === "week";
@@ -41,15 +48,30 @@ export default function MoodCalendar({
           const mood = dailyMoods[d];
           const entryId = entryByDate.get(d);
           const isToday = d === today;
+          const isFavorite = favoriteDates.has(d);
+          const canCreate = !entryId && d < today;
           const cell = (
             <div
-              className={`aspect-square rounded-xl flex flex-col items-center justify-center ${
+              className={`relative aspect-square rounded-xl flex flex-col items-center justify-center ${
+                canCreate ? "hover:bg-[#fff0f4] transition-colors" : ""
+              } ${
                 isToday ? "ring-2 ring-[#e8829e]" : ""
               } ${mood ? "bg-[#fff0f4]" : entryId ? "bg-[#fffaf3]" : "bg-transparent"} ${
                 entryId ? "hover:bg-[#ffd1de] transition-colors" : ""
               }`}
-              title={mood ? `${Number(d.slice(8))}/${Number(d.slice(5, 7))} · ${mood.name}` : undefined}
+              title={
+                canCreate
+                  ? `${Number(d.slice(8))}/${Number(d.slice(5, 7))} · Tạo nhật ký`
+                  : mood
+                  ? `${Number(d.slice(8))}/${Number(d.slice(5, 7))} · ${mood.name}${isFavorite ? " · ♥ yêu thích" : ""}`
+                  : isFavorite
+                  ? "♥ yêu thích"
+                  : undefined
+              }
             >
+              {isFavorite && (
+                <HeartIcon filled className="absolute top-1 right-1 w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#e8829e]" />
+              )}
               <span className={`leading-none ${big ? "text-[34px]" : "text-[22px] sm:text-[26px]"}`}>
                 {mood ? mood.icon : entryId ? "•" : ""}
               </span>
@@ -62,10 +84,17 @@ export default function MoodCalendar({
               </span>
             </div>
           );
-          return entryId ? (
-            <Link key={d} href={`/diary/${entryId}`}>
+          if (entryId) {
+            return (
+              <Link key={d} href={`/diary/${entryId}`}>
+                {cell}
+              </Link>
+            );
+          }
+          return canCreate ? (
+            <button key={d} type="button" onClick={() => onPickEmptyDay(d)} className="block w-full cursor-pointer">
               {cell}
-            </Link>
+            </button>
           ) : (
             <div key={d}>{cell}</div>
           );

@@ -22,6 +22,7 @@ export type EntrySummary = {
   title: string;
   preview: string;
   moodId: string | null;
+  isFavorite: boolean;
 };
 
 export type Mood = { id: string; name: string; icon: string; group: MoodGroup };
@@ -40,7 +41,8 @@ type JournalContextValue = {
   closeSidebarOnMobile: () => void;
   patchEntry: (id: string, patch: Partial<EntrySummary>) => void;
   removeEntry: (id: string) => void;
-  createEntry: () => Promise<void>;
+  // No date = today. A past "YYYY-MM-DD" files a backdated entry.
+  createEntry: (date?: string) => Promise<void>;
   creating: boolean;
   addMood: (input: MoodInput) => Promise<{ ok: true; mood: Mood } | { ok: false; error: string }>;
   deleteMood: (id: string) => Promise<void>;
@@ -125,14 +127,21 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
     setEntries((list) => list.filter((e) => e.id !== id));
   }, []);
 
-  const createEntry = useCallback(async () => {
+  const createEntry = useCallback(async (date?: string) => {
     if (creating) return;
     setCreating(true);
     try {
+      const now = new Date();
+      const today = toDateString(now);
+      const day = date ?? today;
+      // A backdated entry gets that day plus the current time of day, so it
+      // sorts (and is labelled) under the day it was written for.
+      const createdAt =
+        day === today ? undefined : new Date(`${day}T${now.toTimeString().slice(0, 8)}`).toISOString();
       const res = await apiFetch("/api/diary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: toDateString(new Date()) }),
+        body: JSON.stringify({ date: day, createdAt }),
       });
       if (!res.ok) return;
       const entry: EntrySummary = await res.json();
@@ -144,9 +153,10 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
           title: "",
           preview: "",
           moodId: null,
+          isFavorite: false,
         },
         ...list,
-      ]);
+      ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
       closeSidebarOnMobile();
       router.push(`/diary/${entry.id}`);
     } finally {
