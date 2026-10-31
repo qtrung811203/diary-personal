@@ -23,7 +23,6 @@ export default function DiaryEditor({
   onLiveChange,
   autofocus,
   fontKey,
-  editable,
 }: {
   initialContent: JSONContent | null;
   // Debounced — this is what gets saved.
@@ -33,8 +32,6 @@ export default function DiaryEditor({
   autofocus: "start" | "end";
   // Font of the text (title + body) only; the toolbar and app UI keep theirs.
   fontKey: EditorFontKey;
-  // false = read-only view (toolbar hidden, text and images locked).
-  editable: boolean;
 }) {
   const debouncedOnChange = useDebouncedCallback(
     (json: unknown) => onChange(json as JSONContent),
@@ -78,8 +75,7 @@ export default function DiaryEditor({
     ],
     content: initialContent ?? "",
     immediatelyRender: false,
-    autofocus: editable ? autofocus : false,
-    editable,
+    autofocus,
     onUpdate: ({ editor }) => {
       const json = editor.getJSON();
       onLiveChange?.(json);
@@ -171,9 +167,22 @@ export default function DiaryEditor({
     };
   }, [editor]);
 
+  // TipTap's resize handles only listen for mouseup to finish a drag, which a
+  // finger never produces — so the new size was never saved and the image
+  // snapped back to full width. Forward the touch end as a mouseup.
   useEffect(() => {
-    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
-  }, [editor, editable]);
+    const finish = () => {
+      if (document.querySelector('[data-resize-container][data-resize-state="true"]')) {
+        document.dispatchEvent(new MouseEvent("mouseup"));
+      }
+    };
+    document.addEventListener("touchend", finish);
+    document.addEventListener("touchcancel", finish);
+    return () => {
+      document.removeEventListener("touchend", finish);
+      document.removeEventListener("touchcancel", finish);
+    };
+  }, []);
 
   useEffect(() => {
     if (!notice) return;
@@ -185,7 +194,6 @@ export default function DiaryEditor({
     <div className="flex flex-col gap-3 sm:gap-3.5 h-full min-h-0">
       {/* Mobile: docked under the writing area (just above the keyboard);
           desktop: above it. */}
-      {editable && (
       <div className="shrink-0 order-2 md:order-1 flex flex-col gap-2">
         {(uploading > 0 || notice) && (
           <div
@@ -199,7 +207,6 @@ export default function DiaryEditor({
         <ImageTools editor={editor} resizing={resizing} setResizing={setResizing} />
         <EditorToolbar editor={editor} onPickImages={(files) => insertRef.current(files)} />
       </div>
-      )}
       <div data-resizing={resizing ? "true" : "false"} className="order-1 md:order-2 flex-1 min-h-0 bg-white/90 text-[#3a332c] border border-[#e7ddd0] rounded-[18px] px-5 py-6 sm:px-11 sm:py-9 overflow-y-auto">
         <EditorContent
           editor={editor}

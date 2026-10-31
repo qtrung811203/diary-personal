@@ -6,11 +6,11 @@ import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import { CheckIcon, CloseIcon, PencilIcon, TrashIcon } from "./icons";
 
 type Dims = { width: number | null; height: number | null };
-type Box = { top: number; left: number };
 
 // Image editing in two steps, so nothing changes by accident:
-//  1. Tapping an image selects it and shows a small "Chỉnh sửa | Xoá" pill on it
-//     (on a phone the keyboard is dropped so the image is easy to work with).
+//  1. Tapping an image selects it and shows "Chỉnh sửa | Xoá" in the bar above
+//     the toolbar (on a phone the keyboard is dropped so the image is easy to
+//     work with).
 //  2. "Chỉnh sửa" turns on resizing: the corner handles appear and a bar with
 //     three icon buttons stays on screen — cancel (restore the size from when
 //     resizing started), delete (asks first) and accept.
@@ -25,7 +25,7 @@ export default function ImageTools({
   resizing: boolean;
   setResizing: (v: boolean) => void;
 }) {
-  const [sel, setSel] = useState<{ pos: number; changed: boolean; box: Box | null } | null>(null);
+  const [sel, setSel] = useState<{ pos: number; changed: boolean } | null>(null);
   const original = useRef<{ pos: number } & Dims>({ pos: -1, width: null, height: null });
   const lastPos = useRef(-1);
 
@@ -46,27 +46,14 @@ export default function ImageTools({
       }
       const { width, height } = s.node.attrs as Dims;
       const o = original.current;
-      const dom = editor.view.nodeDOM(s.from) as HTMLElement | null;
-      const r = dom?.getBoundingClientRect();
-      const visible = r && r.bottom > 0 && r.top < window.innerHeight;
       setSel({
         pos: s.from,
         changed: o.pos === s.from && (o.width !== width || o.height !== height),
-        box: visible
-          ? {
-              top: Math.min(Math.max(r.top + 8, 8), window.innerHeight - 56),
-              left: Math.max(Math.min(r.right - 8, window.innerWidth - 8), 8),
-            }
-          : null,
       });
     };
     editor.on("transaction", update);
-    window.addEventListener("scroll", update, true);
-    window.addEventListener("resize", update);
     return () => {
       editor.off("transaction", update);
-      window.removeEventListener("scroll", update, true);
-      window.removeEventListener("resize", update);
     };
   }, [editor, setResizing]);
 
@@ -92,6 +79,11 @@ export default function ImageTools({
         if (restore) {
           tr.setNodeAttribute(pos, "width", width);
           tr.setNodeAttribute(pos, "height", height);
+          const img = (editor!.view.nodeDOM(pos) as HTMLElement | null)?.querySelector("img");
+          if (img) {
+            img.style.width = width ? `${width}px` : "";
+            img.style.height = height ? `${height}px` : "";
+          }
         }
         const node = tr.doc.nodeAt(pos);
         if (node) tr.setSelection(TextSelection.near(tr.doc.resolve(pos + node.nodeSize), 1));
@@ -120,20 +112,16 @@ export default function ImageTools({
   const iconBtn = "w-11 h-11 rounded-xl flex items-center justify-center";
 
   if (!resizing) {
-    if (!sel.box) return null;
     return (
-      <div
-        className="fixed z-30 flex items-center gap-1 rounded-2xl border border-[#e7ddd0] bg-white p-1 shadow-lg"
-        style={{ top: sel.box.top, left: sel.box.left, transform: "translateX(-100%)" }}
-      >
+      <div className="flex items-center gap-2 rounded-2xl border border-[#e7ddd0] bg-white/95 px-2.5 py-2 text-[#3a332c]">
         <button
           type="button"
           onMouseDown={keepFocus}
           onClick={() => setResizing(true)}
-          className="h-10 px-3 rounded-xl text-sm font-semibold text-[#3a332c] hover:bg-[#fff0f4] flex items-center gap-1.5"
+          className="h-11 flex-1 rounded-xl bg-[#e8829e] text-white text-sm font-semibold flex items-center justify-center gap-1.5"
         >
           <PencilIcon className="w-4 h-4" />
-          Chỉnh sửa
+          Chỉnh sửa ảnh
         </button>
         <button
           type="button"
@@ -141,7 +129,7 @@ export default function ImageTools({
           aria-label="Xoá ảnh"
           onMouseDown={keepFocus}
           onClick={remove}
-          className="w-10 h-10 rounded-xl text-[#c0392b] hover:bg-[#fdecea] flex items-center justify-center"
+          className={`${iconBtn} border border-[#f3c6c0] text-[#c0392b]`}
         >
           <TrashIcon className="w-5 h-5" />
         </button>
