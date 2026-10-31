@@ -136,6 +136,12 @@ docker compose -f docker-compose.prod.yml exec app npx prisma migrate deploy
 Postgres/MinIO không cần rebuild trừ khi `docker-compose.prod.yml` đổi
 version image của chúng.
 
+### Tự động deploy (GitHub Actions)
+
+`.github/workflows/deploy.yml`: mỗi lần push lên `main` chạy `tsc` + test, nếu qua thì SSH vào VPS, `git pull`, build, `prisma migrate deploy`, khởi động lại `app` và kiểm tra `/login`. Pull request chỉ chạy test.
+
+Cần tạo 5 secret ở GitHub repo (Settings → Secrets and variables → Actions): `SSH_HOST`, `SSH_PORT` (thường `22`), `SSH_USER`, `SSH_KEY` (private key của một cặp khoá riêng cho deploy; public key thêm vào `~/.ssh/authorized_keys` trên VPS), `DEPLOY_PATH` (thư mục đã clone, ví dụ `/home/<user>/diary-personal`). User SSH phải chạy được `docker` và `git pull` không cần nhập mật khẩu.
+
 ## Test image Docker ở máy dev trước khi lên VPS (đã làm, kết quả PASS)
 
 Không cần thêm service `app` vào `docker-compose.dev.yml` cho việc này —
