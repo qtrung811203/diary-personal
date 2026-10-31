@@ -4,6 +4,9 @@ import { requireUnlocked } from "@/lib/session";
 import { deleteImageByUrl } from "@/lib/storage";
 import { countWords, extractTitleAndPreview, normalizeDoc } from "@/lib/doc";
 import { isEditorFont } from "@/lib/fonts";
+import { isPhotoLayout } from "@/lib/photos";
+import { deletePhotoObjects, migrateInlineImages, photoSelect, refreshCover } from "@/lib/photo-store";
+import { trackSelect } from "@/lib/track-store";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -25,7 +28,14 @@ export async function GET(_request: Request, { params }: Ctx) {
   const userId = guard.userId;
 
   const { id } = await params;
-  const entry = await prisma.diaryEntry.findFirst({ where: { id, userId } });
+  await migrateInlineImages(userId, id);
+  const entry = await prisma.diaryEntry.findFirst({
+    where: { id, userId },
+    include: {
+      photos: { orderBy: { sortOrder: "asc" }, select: photoSelect },
+      track: { select: trackSelect },
+    },
+  });
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({ ...entry, contentJson: normalizeDoc(entry.contentJson) });
@@ -109,6 +119,36 @@ export async function PUT(request: Request, { params }: Ctx) {
     }
   }
 
+  if ("photoLayout" in body) {
+    if (!isPhotoLayout(body.photoLayout)) {
+      return NextResponse.json({ error: "Invalid photoLayout" }, { status: 400 });
+    }
+    data.photoLayout = body.photoLayout;
+  }
+
+  if ("trackId" in body) {
+    if (body.trackId === null) {
+      data.trackId = null;
+    } else {
+      const track =
+        typeof body.trackId === "string"
+          ? await prisma.track.findFirst({ where: { id: body.trackId, userId }, select: { id: true } })
+          : null;
+      if (!track) return NextResponse.json({ error: "Unknown track" }, { status: 400 });
+      data.trackId = track.id;
+    }
+  }
+
+  let cover: Awaited<ReturnType<typeof refreshCover>> | null = null;
+  if ("coverPhotoId" in body) {
+    const photo =
+      typeof body.coverPhotoId === "string"
+        ? await prisma.entryPhoto.findFirst({ where: { id: body.coverPhotoId, entryId: id }, select: { id: true } })
+        : null;
+    if (!photo) return NextResponse.json({ error: "Unknown photo" }, { status: 400 });
+    cover = await refreshCover(id, photo.id);
+  }
+
   const entry = await prisma.diaryEntry.update({ where: { id }, data });
   return NextResponse.json({
     id: entry.id,
@@ -116,6 +156,14 @@ export async function PUT(request: Request, { params }: Ctx) {
     preview: entry.preview,
     moodId: entry.moodId,
     isFavorite: entry.isFavorite,
+    photoLayout: entry.photoLayout,
+    trackId: entry.trackId,
+    ...(cover ?? {
+      photoCount: entry.photoCount,
+      coverPhotoId: entry.coverPhotoId,
+      coverThumbUrl: entry.coverThumbUrl,
+      coverColor: entry.coverColor,
+    }),
     updatedAt: entry.updatedAt,
   });
 }
@@ -132,7 +180,9 @@ export async function DELETE(_request: Request, { params }: Ctx) {
   });
   if (!entry) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  const photos = await prisma.entryPhoto.findMany({ where: { entryId: id }, select: { url: true, thumbUrl: true } });
   await prisma.diaryEntry.delete({ where: { id } });
+  deletePhotoObjects(photos);
   if (entry.backgroundType === "image") {
     deleteImageByUrl(entry.backgroundValue).catch(() => {});
   }

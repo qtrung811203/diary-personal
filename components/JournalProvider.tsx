@@ -23,6 +23,9 @@ export type EntrySummary = {
   preview: string;
   moodId: string | null;
   isFavorite: boolean;
+  photoCount: number;
+  coverThumbUrl: string | null;
+  coverColor: string | null;
 };
 
 export type Mood = { id: string; name: string; icon: string; group: MoodGroup };
@@ -154,6 +157,9 @@ export default function JournalProvider({ children }: { children: ReactNode }) {
           preview: "",
           moodId: null,
           isFavorite: false,
+          photoCount: 0,
+          coverThumbUrl: null,
+          coverColor: null,
         },
         ...list,
       ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));

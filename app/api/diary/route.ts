@@ -5,6 +5,7 @@ import { isValidDateParam } from "@/lib/validation";
 import { isNotFutureDate, isPlausibleCreatedAt } from "@/lib/entry-dates";
 import { countWords, extractTitleAndPreview, isDocEmpty, normalizeDoc } from "@/lib/doc";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
+import { migrateInlineImages } from "@/lib/photo-store";
 
 const LIST_LIMIT = 1000;
 
@@ -33,11 +34,24 @@ export async function GET() {
     });
   }
 
+  await migrateInlineImages(userId);
+
   const entries = await prisma.diaryEntry.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: LIST_LIMIT,
-    select: { id: true, date: true, createdAt: true, title: true, preview: true, moodId: true, isFavorite: true },
+    select: {
+      id: true,
+      date: true,
+      createdAt: true,
+      title: true,
+      preview: true,
+      moodId: true,
+      isFavorite: true,
+      photoCount: true,
+      coverThumbUrl: true,
+      coverColor: true,
+    },
   });
   return NextResponse.json({ entries });
 }

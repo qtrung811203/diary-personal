@@ -20,8 +20,12 @@ model User {
   pinLockedUntil DateTime?
   // Bumped on password reset; JWTs carrying an older value stop working.
   sessionVersion Int       @default(0)
+  // Start an entry's music as soon as it is opened.
+  musicAutoplay  Boolean   @default(true)
   entries      DiaryEntry[]
   moods        Mood[]
+  tracks       Track[]
+  photos       EntryPhoto[]
 }
 
 // A user's own mood list: seeded from DEFAULT_MOODS (lib/moods.ts) the first
@@ -60,11 +64,62 @@ model DiaryEntry {
   // Font of the entry's text (title + body) — a key from lib/fonts.ts.
   fontFamily      String   @default("lora")
   isFavorite      Boolean  @default(false)
+  // Photos live beside the text (EntryPhoto). The cover's thumbnail, colour and
+  // the count are copied here so the sidebar and Kỷ niệm never join photos.
+  photoCount      Int      @default(0)
+  coverPhotoId    String?
+  coverThumbUrl   String?
+  coverColor      String?
+  // How photos are laid out on the read view: cover | grid | polaroid.
+  photoLayout     String   @default("cover")
+  trackId         String?
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id])
   mood            Mood?    @relation(fields: [moodId], references: [id], onDelete: SetNull)
+  track           Track?   @relation(fields: [trackId], references: [id], onDelete: SetNull)
+  photos          EntryPhoto[]
 
   @@index([userId, createdAt])
   @@index([userId, date])
   @@index([userId, isFavorite])
+}
+
+// One photo of an entry. `url` is the full image (long edge <= 2000px),
+// `thumbUrl` a small WebP (long edge 480px) for lists; photos moved out of old
+// entries' text have no thumbnail. `color` is the average colour, shown while
+// the image loads.
+model EntryPhoto {
+  id        String     @id @default(cuid())
+  entryId   String
+  userId    String
+  url       String
+  thumbUrl  String?
+  width     Int        @default(0)
+  height    Int        @default(0)
+  color     String?
+  sortOrder Int        @default(0)
+  createdAt DateTime   @default(now())
+  entry     DiaryEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, sortOrder])
+  @@index([userId, createdAt])
+}
+
+// A user's music library: YouTube videos (played by the app's own player) or
+// Spotify links (shown in Spotify's embed). Entries pick one track each.
+model Track {
+  id           String       @id @default(cuid())
+  userId       String
+  title        String
+  provider     String
+  externalId   String
+  spotifyKind  String?
+  thumbnailUrl String?
+  createdAt    DateTime     @default(now())
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries      DiaryEntry[]
+
+  @@unique([userId, provider, externalId])
+  @@index([userId])
 }

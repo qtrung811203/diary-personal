@@ -89,6 +89,9 @@ export async function uploadImage(
       Key: key,
       Body: buffer,
       ContentType: contentType,
+      // Keys are random UUIDs and never rewritten, so browsers and the
+      // Cloudflare edge may keep them forever.
+      CacheControl: "public, max-age=31536000, immutable",
     })
   );
 

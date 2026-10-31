@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { MAX_EDGE, fitWithin, needsCompression } from "./image-upload";
+import { MAX_EDGE, THUMB_EDGE, fitWithin, needsCompression, toHex } from "./image-upload";
+
+describe("thumbnails", () => {
+  it("shrink phone photos to the thumbnail edge", () => {
+    expect(fitWithin(4032, 3024, THUMB_EDGE)).toEqual({ width: 480, height: 360 });
+  });
+  it("toHex formats an RGB colour", () => {
+    expect(toHex(232, 130, 158)).toBe("#e8829e");
+    expect(toHex(0, 5.4, 255)).toBe("#0005ff");
+  });
+});
 
 describe("fitWithin", () => {
   it("keeps images already within the limit", () => {

@@ -177,6 +177,13 @@ docker rm -f together-diary-test && docker rmi together-diary:test
 
 Migration `entry_favorite` thêm cột `isFavorite`; chạy qua `prisma migrate deploy` như các migration khác. Nhật ký ngày cũ tạo từ trang Tổng quan (bấm ô ngày trống trong quá khứ).
 
+## Ảnh của ngày, nhạc nền, Kỷ niệm
+
+- Migration `photos_music` thêm bảng `EntryPhoto`, `Track` và vài cột trên `DiaryEntry`/`User`; chạy qua `prisma migrate deploy` như các migration khác.
+- Ảnh cũ nằm trong văn bản được tự chuyển sang khung ảnh khi người dùng mở app (không cần chạy script).
+- Ảnh mới tải lên gồm bản lớn (≤2000px) và thumbnail WebP 480px; object được đặt `Cache-Control: immutable` 1 năm.
+- Nhạc YouTube phát qua YouTube IFrame API (trình duyệt tải `https://www.youtube.com/iframe_api`); tên bài lấy từ oEmbed của YouTube/Spotify nên server cần ra được Internet.
+
 ## Việc KHÔNG được tự ý làm
 
 - Không đổi mật khẩu/secret của các service khác đã chạy sẵn trên VPS.

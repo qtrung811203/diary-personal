@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { lockNow, setUnlockToken } from "@/lib/api-client";
 import CalendarIcon from "./CalendarIcon";
-import { ChevronLeftIcon, HeartIcon, PlusIcon } from "./icons";
+import { BookIcon, ChevronLeftIcon, HeartIcon, PlusIcon } from "./icons";
 import { useJournal } from "./JournalProvider";
 import { groupByMonth } from "@/lib/entry-dates";
 import { weekdayShort } from "@/lib/dates";
+import PhotoThumb from "@/components/photos/PhotoThumb";
 
 const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
 
@@ -18,9 +19,10 @@ export default function Sidebar() {
     useJournal();
 
   const moodById = new Map(moods.map((m) => [m.id, m]));
-  const activeId = pathname.startsWith("/diary/") ? pathname.split("/")[2] : null;
+  const activeId = /^\/(diary|memories)\/[^/]+/.test(pathname) ? pathname.split("/")[2] : null;
   const onDashboard = pathname.startsWith("/dashboard");
   const onFavorites = pathname.startsWith("/favorites");
+  const onMemories = pathname.startsWith("/memories");
   const favoriteCount = entries.filter((e) => e.isFavorite).length;
 
   // Mobile: a drawer that starts closed. Desktop: open unless the user hid it.
@@ -80,6 +82,19 @@ export default function Sidebar() {
           {favoriteCount > 0 && <span className="text-xs font-bold text-[#a1968a]">{favoriteCount}</span>}
         </Link>
 
+        <Link
+          href="/memories"
+          onClick={closeSidebarOnMobile}
+          className={`mx-3 mt-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
+            onMemories ? "bg-[#ffd1de] text-[#3a332c]" : "text-[#5c5248] hover:bg-[#fff0f4]"
+          }`}
+        >
+          <span className="w-7 h-7 shrink-0 flex items-center justify-center text-[#e8829e]">
+            <BookIcon className="w-5 h-5" />
+          </span>
+          Kỷ niệm
+        </Link>
+
         <div className="flex-1 overflow-y-auto mt-2 pb-4">
           {!entriesLoaded && (
             <div className="px-3 space-y-2 animate-pulse">
@@ -97,8 +112,9 @@ export default function Sidebar() {
             </p>
           )}
 
-          {groupByMonth(entries).map((group) => (
-            <section key={group.label}>
+          {groupByMonth(entries).map((group, i) => (
+            // A month can come up twice when a backdated entry sorts between others.
+            <section key={`${group.label}-${i}`}>
               <div className="sticky top-0 z-10 bg-white/95 px-5 py-1.5 text-[11px] font-bold tracking-wide uppercase text-[#a1968a]">
                 {group.label}
               </div>
@@ -132,6 +148,7 @@ export default function Sidebar() {
                           )}
                           <div className={`text-[11px] mt-1 flex items-center gap-1.5 ${active ? "text-white/85" : "text-[#a1968a]"}`}>
                             <span>{timeFormat.format(new Date(e.createdAt))}</span>
+                            {e.photoCount > 0 && <span className="shrink-0">· {e.photoCount} ảnh</span>}
                             {mood && (
                               <span className="truncate">
                                 · {mood.icon} {mood.name}
@@ -139,6 +156,12 @@ export default function Sidebar() {
                             )}
                           </div>
                         </div>
+                        {e.coverThumbUrl && (
+                          <PhotoThumb
+                            photo={{ url: e.coverThumbUrl, color: e.coverColor }}
+                            className={`w-11 h-11 rounded-xl shrink-0 self-center ${active ? "ring-2 ring-white/70" : ""}`}
+                          />
+                        )}
                       </Link>
                     </li>
                   );

@@ -10,7 +10,12 @@ import MoodPicker from "@/components/MoodPicker";
 import FavoriteButton from "@/components/FavoriteButton";
 import FontPicker from "@/components/FontPicker";
 import SidebarToggle from "@/components/SidebarToggle";
-import { TrashIcon } from "@/components/icons";
+import { EyeIcon, TrashIcon } from "@/components/icons";
+import { PhotoPanel, PhotoStrip } from "@/components/photos/PhotoPanel";
+import MusicChip from "@/components/music/MusicChip";
+import { useEntryMusic } from "@/components/music/MusicProvider";
+import { useEntryPhotos, type Photo } from "@/hooks/useEntryPhotos";
+import { isPhotoLayout, type PhotoLayout } from "@/lib/photos";
 import { useJournal } from "@/components/JournalProvider";
 import { DEFAULT_BACKGROUND_VALUE } from "@/lib/background";
 import { weekdayShort } from "@/lib/dates";
@@ -28,6 +33,10 @@ type Entry = {
   fontFamily: string;
   backgroundType: string;
   backgroundValue: string;
+  photos: Photo[];
+  coverPhotoId: string | null;
+  photoLayout: string;
+  trackId: string | null;
 };
 
 type Load = { status: "loaded"; entry: Entry } | { status: "error" } | { status: "missing" };
@@ -39,6 +48,56 @@ const timeFormat = new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "
 function createdLabel(entry: { date: string; createdAt: string }) {
   const [y, m, d] = entry.date.split("-");
   return `${weekdayShort(entry.date)}, ${d}/${m}/${y} · ${timeFormat.format(new Date(entry.createdAt))}`;
+}
+
+// Editor + photos. Mounted once the entry is loaded (the photo state starts
+// from the loaded list).
+function EntryWorkspace({
+  entry,
+  onSave,
+  onLiveChange,
+}: {
+  entry: Entry;
+  onSave: (patch: Record<string, unknown>) => void;
+  onLiveChange: (json: JSONContent) => void;
+}) {
+  const { patchEntry } = useJournal();
+  const photos = useEntryPhotos(entry.id, entry.photos, entry.coverPhotoId, (fields) =>
+    patchEntry(entry.id, {
+      photoCount: fields.photoCount,
+      coverThumbUrl: fields.coverThumbUrl,
+      coverColor: fields.coverColor,
+    })
+  );
+  const [layout, setLayout] = useState<PhotoLayout>(isPhotoLayout(entry.photoLayout) ? entry.photoLayout : "cover");
+  const changeLayout = (l: PhotoLayout) => {
+    setLayout(l);
+    onSave({ photoLayout: l });
+  };
+  const addPhotos = (files: File[]) => void photos.add(files);
+
+  return (
+    <div className="h-full flex gap-4">
+      <div className="flex-1 min-w-0 h-full">
+        <DiaryEditor
+          initialContent={entry.contentJson}
+          autofocus={isDocEmpty(entry.contentJson) ? "start" : "end"}
+          fontKey={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
+          onLiveChange={onLiveChange}
+          onChange={(json) => onSave({ contentJson: json })}
+          onAddPhotos={addPhotos}
+          header={
+            <div className="lg:hidden">
+              <PhotoStrip photos={photos} layout={layout} onLayout={changeLayout} />
+            </div>
+          }
+        />
+      </div>
+      <div className="hidden lg:block w-[290px] xl:w-[310px] shrink-0 h-full">
+        <PhotoPanel photos={photos} layout={layout} onLayout={changeLayout} />
+      </div>
+    </div>
+  );
 }
 
 // One instance per entry id (the page keys it by id), so every closure below
@@ -72,6 +131,7 @@ export default function EntryView({ id }: { id: string }) {
   }, [id, retryTick]);
 
   const entry = load?.status === "loaded" ? load.entry : null;
+  const track = useEntryMusic(entry?.trackId ?? null);
 
   function save(patch: Record<string, unknown>) {
     setSaveStatus("saving");
@@ -105,6 +165,13 @@ export default function EntryView({ id }: { id: string }) {
     );
     patchEntry(id, { isFavorite });
     void save({ isFavorite });
+  }
+
+  function handleTrack(trackId: string | null) {
+    setLoad((cur) =>
+      cur?.status === "loaded" ? { status: "loaded", entry: { ...cur.entry, trackId } } : cur
+    );
+    void save({ trackId });
   }
 
   function handleFont(fontFamily: EditorFontKey) {
@@ -159,6 +226,7 @@ export default function EntryView({ id }: { id: string }) {
         <SidebarToggle />
         {entry && <MoodPicker value={entry.moodId} onChange={handleMood} />}
         {entry && <FavoriteButton value={entry.isFavorite} onChange={handleFavorite} />}
+        {entry && <MusicChip track={track} onChange={handleTrack} />}
         {saveStatus !== "idle" && (
           <span className="text-xs rounded-full bg-white/75 px-2.5 py-1 text-[#6f655a]">
             {saveStatus === "saving" && "Đang lưu…"}
@@ -168,6 +236,14 @@ export default function EntryView({ id }: { id: string }) {
         )}
         {entry && (
           <div className="ml-auto flex items-center gap-2">
+            <Link
+              href={`/memories/${id}`}
+              title="Xem lại nhật ký này"
+              className="h-10 rounded-xl border border-white/60 bg-white shadow-sm px-3 flex items-center gap-1.5 text-sm font-semibold text-[#3a332c] hover:bg-[#fff0f4]"
+            >
+              <EyeIcon className="w-5 h-5 text-[#e8829e]" />
+              <span className="hidden sm:inline">Xem lại</span>
+            </Link>
             <FontPicker
               value={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
               onChange={handleFont}
@@ -207,13 +283,7 @@ export default function EntryView({ id }: { id: string }) {
 
       <div className="flex-1 min-h-0 mx-3 sm:mx-5">
         {entry && (
-          <DiaryEditor
-            initialContent={entry.contentJson}
-            autofocus={isDocEmpty(entry.contentJson) ? "start" : "end"}
-            fontKey={isEditorFont(entry.fontFamily) ? entry.fontFamily : DEFAULT_EDITOR_FONT}
-            onLiveChange={handleLiveChange}
-            onChange={(json) => void save({ contentJson: json })}
-          />
+          <EntryWorkspace entry={entry} onSave={(patch) => void save(patch)} onLiveChange={handleLiveChange} />
         )}
         {!load && (
           <div className="flex flex-col gap-3 h-full animate-pulse">
