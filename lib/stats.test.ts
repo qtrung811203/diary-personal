@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  computeStreaks,
   dailyMoods,
   dailyValence,
   groupDistribution,
@@ -8,6 +7,7 @@ import {
   onThisDay,
   summarize,
   weekdayBreakdown,
+  writingTime,
   type StatEntry,
   type StatMood,
 } from "./stats";
@@ -26,26 +26,23 @@ const e = (date: string, moodId: string | null, words = 10, hhmm = "10:00"): Sta
   words,
 });
 
-describe("computeStreaks", () => {
-  it("counts consecutive days ending today", () => {
-    expect(computeStreaks(["2026-10-25", "2026-10-26", "2026-10-27"], "2026-10-27")).toEqual({
-      current: 3,
-      longest: 3,
-    });
+describe("writingTime", () => {
+  const VN = -420; // getTimezoneOffset() in Vietnam (UTC+7)
+
+  it("picks the slot most entries were started in, in the user's local time", () => {
+    // 16:00Z = 23:00 and 17:30Z = 00:30 in Vietnam -> night; 02:00Z = 09:00 -> morning.
+    const entries = [e("2026-10-01", null, 10, "16:00"), e("2026-10-02", null, 10, "17:30"), e("2026-10-03", null, 10, "02:00")];
+    expect(writingTime(entries, VN)).toEqual({ slot: "night", share: 67, peakHour: 23 });
   });
 
-  it("keeps the streak alive when today isn't written yet but yesterday was", () => {
-    expect(computeStreaks(["2026-10-25", "2026-10-26"], "2026-10-27").current).toBe(2);
+  it("ignores empty entries and returns null when nothing was written", () => {
+    expect(writingTime([e("2026-10-01", null, 0, "16:00")], VN)).toBeNull();
+    expect(writingTime([], VN)).toBeNull();
   });
 
-  it("resets the current streak after a gap, and tracks the longest separately", () => {
-    const dates = ["2026-10-01", "2026-10-02", "2026-10-03", "2026-10-26"];
-    expect(computeStreaks(dates, "2026-10-27")).toEqual({ current: 1, longest: 3 });
-  });
-
-  it("ignores duplicate dates (several entries in one day) and handles none", () => {
-    expect(computeStreaks(["2026-10-27", "2026-10-27"], "2026-10-27")).toEqual({ current: 1, longest: 1 });
-    expect(computeStreaks([], "2026-10-27")).toEqual({ current: 0, longest: 0 });
+  it("buckets hours at the slot edges", () => {
+    const at = (h: number) => writingTime([e("2026-10-01", null, 10, `${String(h).padStart(2, "0")}:00`)], 0)?.slot;
+    expect([4, 5, 11, 14, 18, 22].map(at)).toEqual(["night", "morning", "noon", "afternoon", "evening", "night"]);
   });
 });
 

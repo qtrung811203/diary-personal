@@ -11,6 +11,7 @@ import { Empty, GroupDonut, MoodBars, TrendChart, WeekdayChart } from "@/compone
 import type { DashboardData } from "@/components/dashboard/types";
 import { addDays, monthRange, toDateString, weekRange } from "@/lib/dates";
 import { apiFetch } from "@/lib/api-client";
+import { WRITING_SLOTS } from "@/lib/stats";
 
 type View = "week" | "month";
 
@@ -58,7 +59,8 @@ export default function DashboardPage() {
   const key = `${view}|${anchor}`;
   useEffect(() => {
     let cancelled = false;
-    apiFetch(`/api/dashboard?view=${view}&date=${anchor}&today=${today}`)
+    const tz = new Date().getTimezoneOffset();
+    apiFetch(`/api/dashboard?view=${view}&date=${anchor}&today=${today}&tz=${tz}`)
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
       .then((data) => {
@@ -161,9 +163,22 @@ export default function DashboardPage() {
               <Stat label="Số nhật ký" value={data.summary.entriesCount} sub={`${data.summary.daysWritten} ngày có viết`} />
               <Stat label="Số từ đã viết" value={data.summary.words.toLocaleString("vi-VN")} />
               <Stat
-                label="Chuỗi ngày viết"
-                value={<>🔥 {data.streaks.current}</>}
-                sub={`Dài nhất: ${data.streaks.longest} ngày`}
+                label="Giờ hay viết"
+                value={
+                  data.writingTime ? (
+                    <span className="flex items-center gap-1.5 text-lg">
+                      <span className="text-2xl">{WRITING_SLOTS[data.writingTime.slot].icon}</span>
+                      {WRITING_SLOTS[data.writingTime.slot].label}
+                    </span>
+                  ) : (
+                    "–"
+                  )
+                }
+                sub={
+                  data.writingTime
+                    ? `${data.writingTime.share}% nhật ký · nhiều nhất lúc ${data.writingTime.peakHour}h`
+                    : undefined
+                }
               />
               <Stat
                 label="Tâm trạng nổi bật"

@@ -5,7 +5,6 @@ import { ensureMoods } from "@/lib/mood-store";
 import { isValidDateParam } from "@/lib/validation";
 import { addDays, eachDay, monthRange, weekRange } from "@/lib/dates";
 import {
-  computeStreaks,
   dailyMoods,
   dailyValence,
   groupDistribution,
@@ -13,13 +12,15 @@ import {
   onThisDay,
   summarize,
   weekdayBreakdown,
+  writingTime,
   type StatEntry,
 } from "@/lib/stats";
 
 const TRAILING_DAYS = 90;
 
 // ?view=week|month&date=YYYY-MM-DD (any day inside the period shown)
-// &today=YYYY-MM-DD (the user's own local today — streaks / "on this day").
+// &today=YYYY-MM-DD (the user's own local today — "on this day")
+// &tz=<getTimezoneOffset() minutes> (for the usual writing time).
 export async function GET(request: Request) {
   const guard = await requireUnlocked();
   if (!guard.ok) return guard.response;
@@ -32,6 +33,8 @@ export async function GET(request: Request) {
   if (!isValidDateParam(today) || !isValidDateParam(date)) {
     return NextResponse.json({ error: "Invalid date" }, { status: 400 });
   }
+  const tzParam = Number(url.searchParams.get("tz") ?? 0);
+  const tz = Number.isInteger(tzParam) && Math.abs(tzParam) <= 840 ? tzParam : 0;
 
   const range = view === "week" ? weekRange(date) : monthRange(date);
   const days = eachDay(range.start, range.end);
@@ -41,7 +44,7 @@ export async function GET(request: Request) {
   const toStat = (rows: { date: string; createdAt: Date; moodId: string | null; words: number }[]): StatEntry[] =>
     rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
 
-  const [moodRows, periodRows, trailingRows, dateRows, sameDayRows] = await Promise.all([
+  const [moodRows, periodRows, trailingRows, sameDayRows] = await Promise.all([
     ensureMoods(userId),
     prisma.diaryEntry.findMany({
       where: { userId, date: { gte: range.start, lte: range.end } },
@@ -51,7 +54,6 @@ export async function GET(request: Request) {
       where: { userId, date: { gte: trailingStart, lte: today } },
       select,
     }),
-    prisma.diaryEntry.findMany({ where: { userId }, select: { date: true } }),
     prisma.diaryEntry.findMany({
       where: { userId, date: { endsWith: today.slice(4) } },
       select: { id: true, date: true, title: true, preview: true },
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
     days,
     today,
     summary: summarize(period, moods),
-    streaks: computeStreaks(dateRows.map((r) => r.date), today),
+    writingTime: writingTime(period, tz),
     dailyMoods: dailyMoods(period, moods),
     moodDistribution: moodDistribution(period, moods),
     groupDistribution: groupDistribution(period, moods),

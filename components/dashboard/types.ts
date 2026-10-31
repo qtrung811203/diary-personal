@@ -1,4 +1,5 @@
 import type { MoodGroup } from "@/lib/moods";
+import type { WritingSlot } from "@/lib/stats";
 
 export type DMood = { id: string; name: string; icon: string; group: MoodGroup };
 
@@ -8,7 +9,7 @@ export type DashboardData = {
   days: string[];
   today: string;
   summary: { entriesCount: number; daysWritten: number; words: number; topMood: DMood | null };
-  streaks: { current: number; longest: number };
+  writingTime: { slot: WritingSlot; share: number; peakHour: number } | null;
   dailyMoods: Record<string, DMood>;
   moodDistribution: { mood: DMood; count: number }[];
   groupDistribution: Record<MoodGroup, number>;

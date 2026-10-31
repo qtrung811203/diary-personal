@@ -1,4 +1,4 @@
-import { addDays, weekdayIndex } from "./dates";
+import { weekdayIndex } from "./dates";
 import { MOOD_GROUPS, MOOD_GROUP_META, type MoodGroup } from "./moods";
 
 export type StatMood = { id: string; name: string; icon: string; group: MoodGroup };
@@ -6,26 +6,41 @@ export type StatEntry = { date: string; createdAt: string; moodId: string | null
 
 const byId = (moods: StatMood[]) => new Map(moods.map((m) => [m.id, m]));
 
-export function computeStreaks(dates: string[], today: string): { current: number; longest: number } {
-  const days = [...new Set(dates)].sort();
-  if (days.length === 0) return { current: 0, longest: 0 };
+// Times of day, each listed by its hours in clock order (night wraps past midnight).
+export const WRITING_SLOTS = {
+  morning: { label: "Chim sớm", icon: "☀️", hours: [5, 6, 7, 8, 9, 10] },
+  noon: { label: "Nghỉ trưa", icon: "🌤️", hours: [11, 12, 13] },
+  afternoon: { label: "Buổi chiều", icon: "🌇", hours: [14, 15, 16, 17] },
+  evening: { label: "Buổi tối", icon: "🌆", hours: [18, 19, 20, 21] },
+  night: { label: "Cú đêm", icon: "🌙", hours: [22, 23, 0, 1, 2, 3, 4] },
+} as const;
+export type WritingSlot = keyof typeof WRITING_SLOTS;
 
-  let longest = 1;
-  let run = 1;
-  for (let i = 1; i < days.length; i++) {
-    run = days[i] === addDays(days[i - 1], 1) ? run + 1 : 1;
-    longest = Math.max(longest, run);
+// When the user usually starts writing. tzOffset is the browser's
+// getTimezoneOffset() (minutes, UTC minus local) since createdAt is UTC.
+export function writingTime(
+  entries: StatEntry[],
+  tzOffset: number
+): { slot: WritingSlot; share: number; peakHour: number } | null {
+  const perHour = new Array<number>(24).fill(0);
+  let total = 0;
+  for (const en of entries) {
+    if (en.words <= 0) continue;
+    const t = new Date(en.createdAt);
+    const local = (((t.getUTCHours() * 60 + t.getUTCMinutes() - tzOffset) % 1440) + 1440) % 1440;
+    perHour[Math.floor(local / 60)]++;
+    total++;
   }
+  if (total === 0) return null;
 
-  // The streak is still "current" if the last write was today or yesterday.
-  const set = new Set(days);
-  let cursor = set.has(today) ? today : addDays(today, -1);
-  let current = 0;
-  while (set.has(cursor)) {
-    current++;
-    cursor = addDays(cursor, -1);
+  let best: { slot: WritingSlot; count: number } | null = null;
+  for (const slot of Object.keys(WRITING_SLOTS) as WritingSlot[]) {
+    const count = WRITING_SLOTS[slot].hours.reduce<number>((sum, h) => sum + perHour[h], 0);
+    if (!best || count > best.count) best = { slot, count };
   }
-  return { current, longest };
+  const { slot, count } = best!;
+  const peakHour = WRITING_SLOTS[slot].hours.reduce((a, h) => (perHour[h] > perHour[a] ? h : a));
+  return { slot, share: Math.round((count / total) * 100), peakHour };
 }
 
 // One representative mood per day: the latest-created entry that has a mood.
